@@ -24,6 +24,7 @@ import ExperimentViewUtil from './ExperimentViewUtil';
 import DeleteRunModal from './modals/DeleteRunModal';
 import RestoreRunModal from './modals/RestoreRunModal';
 import { NoteInfo, NOTE_CONTENT_TAG } from '../utils/NoteUtils';
+import { DataInfo, TRAIN_DATA_TAG, EVAL_DATA_TAG, TEST_DATA_TAG } from '../utils/DataUtils';
 import LocalStorageUtils from '../../common/utils/LocalStorageUtils';
 import { ExperimentViewPersistedState } from '../sdk/MlflowLocalStorageMessages';
 import { Icon, Popover, Descriptions } from 'antd';
@@ -329,6 +330,23 @@ export class ExperimentView extends Component {
     );
   }
 
+  renderDataSection(dataInfo) {
+    const { showNotesEditor } = this.state;
+
+    const editIcon = (
+      <IconButton icon={<Icon type='form' />} onClick={this.startEditingDescription} />
+    );
+
+    return (
+      <CollapsibleSection
+        title={<span>Data {showNotesEditor ? null : editIcon}</span>}
+        forceOpen={showNotesEditor}
+      >
+        {dataInfo}
+      </CollapsibleSection>
+    );
+  }
+
   handleColumnSelectionCheck = (categorizedUncheckedKeys) => {
     this.setState({
       persistedState: new ExperimentViewPersistedState({
@@ -377,6 +395,7 @@ export class ExperimentView extends Component {
     const deleteDisabled = Object.keys(this.state.runsSelected).length < 1;
     const restoreDisabled = Object.keys(this.state.runsSelected).length < 1;
     const noteInfo = NoteInfo.fromTags(experimentTags);
+    const dataInfo = DataInfo.fromTags(experimentTags);
     const searchInputHelpTooltipContent = (
       <div className='search-input-tooltip-content'>
         Search runs using a simplified version of the SQL <b>WHERE</b> clause.
@@ -408,6 +427,7 @@ export class ExperimentView extends Component {
           {this.renderArtifactLocation()}
         </Descriptions>
         <div className='ExperimentView-info'>{this.renderNoteSection(noteInfo)}</div>
+        <div className='ExperimentView-info'>{this.renderDataSection(dataInfo)}</div>
         <div className='ExperimentView-runs runs-table-flex-container'>
           {this.props.searchRunsError ? (
             <div className='error-message'>
