@@ -10,7 +10,7 @@ import logging
 import numpy as np
 import pandas as pd
 
-from mlflow.entities import Run, RunStatus, Param, RunTag, Metric, ViewType
+from mlflow.entities import Run, RunStatus, Param, RunTag, Metric, ViewType, ExperimentTag
 from mlflow.entities.lifecycle_stage import LifecycleStage
 from mlflow.exceptions import MlflowException
 from mlflow.tracking.client import MlflowClient
@@ -53,6 +53,9 @@ def set_experiment(experiment_name):
             " experiment to create a new one." % experiment.name)
     global _active_experiment_id
     _active_experiment_id = exp_id
+
+def set_experiment_tag(experiment_id: int, key, value):
+    MlflowClient().set_experiment_tag(experiment_id, key, value)
 
 
 class ActiveRun(Run):  # pylint: disable=W0223
