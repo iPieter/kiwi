@@ -11,9 +11,11 @@ export class DataInfo {
     }
 
     static getTag = (tags, tagType) => {
-        const tag = Object.values(tags).filter((t) => t.getKey().includes(tagType)).map((t)=> ({[t['key']]: t['value']}));
+        var tag = {};
+
+        Object.values(tags).filter((t) => t.getKey().includes(tagType)).forEach((t) => tag[t['key'].split('.')[3]] = t['value']);
         if (tag === undefined) {
-            return undefined;
+            return [];
         }
         return tag
     };
