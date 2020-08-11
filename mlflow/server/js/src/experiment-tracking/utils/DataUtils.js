@@ -1,19 +1,29 @@
-import { KIWI_INTERNAL_PREFIX } from '../../common/utils/TagUtils';
+import {KIWI_INTERNAL_PREFIX} from '../../common/utils/TagUtils';
 
-export const TEST_DATA_TAG = KIWI_INTERNAL_PREFIX + 'datasets.test';
-export const EVAL_DATA_TAG = KIWI_INTERNAL_PREFIX + 'datasets.eval';
 export const TRAIN_DATA_TAG = KIWI_INTERNAL_PREFIX + 'datasets.training';
+export const TRAINDEV_DATA_TAG = KIWI_INTERNAL_PREFIX + 'datasets.traindev';
+export const DEV_DATA_TAG = KIWI_INTERNAL_PREFIX + 'datasets.dev';
+export const TEST_DATA_TAG = KIWI_INTERNAL_PREFIX + 'datasets.test';
 
 export class DataInfo {
-  constructor(content) {
-    this.content = content;
-  }
-
-  static fromTags = (tags) => {
-    const contentTag = Object.values(tags).find((t) => t.getKey() === TRAIN_DATA_TAG);
-    if (contentTag === undefined) {
-      return undefined;
+    constructor(content) {
+        this.content = content;
     }
-    return contentTag.getValue();
-  };
+
+    static getTag = (tags, tagType) => {
+        const tag = Object.values(tags).filter((t) => t.getKey().includes(tagType)).map((t)=> ({[t['key']]: t['value']}));
+        if (tag === undefined) {
+            return undefined;
+        }
+        return tag
+    };
+
+    static fromTags = (tags) => {
+        return {
+            "train": this.getTag(tags, TRAIN_DATA_TAG),
+            "traindev": this.getTag(tags, TRAINDEV_DATA_TAG),
+            "dev": this.getTag(tags, DEV_DATA_TAG),
+            "test": this.getTag(tags, TEST_DATA_TAG)
+        };
+    };
 }
