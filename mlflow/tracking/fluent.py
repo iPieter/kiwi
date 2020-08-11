@@ -323,6 +323,45 @@ def log_artifacts(local_dir, artifact_path=None):
     MlflowClient().log_artifacts(run_id, local_dir, artifact_path)
 
 
+def register_training_dataset(dataloader=None, dataset_location=None, experiment_id=None):
+    """
+    Register the dataset used for training the models. This is done for the current active
+    experiment.
+    """
+    _register_split_dataset(dataloader=dataloader, dataset_location=dataset_location, split="kiwi.datasets.training", experiment_id=experiment_id)
+
+
+def register_test_dataset(dataloader=None, dataset_location=None, experiment_id=None):
+    """
+    Register the dataset used for training the models. This is done for the current active
+    experiment.
+    """
+    _register_split_dataset(dataloader=dataloader, dataset_location=dataset_location, split="kiwi.datasets.test", experiment_id=experiment_id)
+
+
+def register_dev_dataset(dataloader=None, dataset_location=None, experiment_id=None):
+    """
+    Register the dataset used for training the models. This is done for the current active
+    experiment.
+    """
+    _register_split_dataset(dataloader=dataloader, dataset_location=dataset_location, split="kiwi.datasets.dev", experiment_id=experiment_id)
+
+def _register_split_dataset(split: str, dataloader=None, dataset_location=None, experiment_id=None):
+    # Find experiment if not specified
+    if not experiment_id:
+        experiment_id: int = _get_experiment_id() if _get_experiment_id() \
+            else _active_run_stack[-1].info.experiment_id if _active_run_stack[-1] else None
+
+    print("current experiment: " + experiment_id)
+    if dataloader:
+        MlflowClient().set_experiment_tag(experiment_id, split + ".hash", dataloader.__hash__())
+        MlflowClient().set_experiment_tag(experiment_id, split + ".length", len(dataloader))
+
+    if dataset_location:
+        MlflowClient().set_experiment_tag(experiment_id, split + ".path", dataset_location)
+        MlflowClient().set_experiment_tag(experiment_id, split + ".bytes", os.path.getsize(dataset_location))
+
+
 def _record_logged_model(mlflow_model):
     run_id = _get_or_start_run().info.run_id
     MlflowClient()._record_logged_model(run_id, mlflow_model)
