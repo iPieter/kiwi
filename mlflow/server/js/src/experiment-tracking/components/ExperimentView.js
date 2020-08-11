@@ -330,6 +330,13 @@ export class ExperimentView extends Component {
         );
     }
 
+    formatBytes(a, b) {
+        if (0 == a) return "0 Bytes";
+        var c = 1024, d = b || 2, e = ["Bytes", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"],
+            f = Math.floor(Math.log(a) / Math.log(c));
+        return parseFloat((a / Math.pow(c, f)).toFixed(d)) + " " + e[f]
+    }
+
     renderDataSection(dataInfo) {
         const {showNotesEditor} = this.state;
 
@@ -340,8 +347,12 @@ export class ExperimentView extends Component {
         let panels = [];
 
         for (let k in dataInfo) {
-            let content = dataInfo[k].length > 0 ? JSON.stringify(dataInfo[k]) : <p className="text-muted">the {k} split is not used</p>
-
+            let content = dataInfo[k].length > 0 ?
+                <div>
+                    <p><i className="fas fa-file"></i> {dataInfo[k]["path"]}</p>
+                    <p><i className="fas fa-box"></i> {dataInfo[k]["length"]} items</p>
+                </div>
+                : <p className="text-muted">The {k} split is not used</p>
 
             panels.push(
                 <div className={"col-md-" + (12 / Object.keys(dataInfo).length)}>
@@ -351,6 +362,9 @@ export class ExperimentView extends Component {
                         </div>
                         <div className="panel-body">
                             {content}
+                        </div>
+                        <div className="panel-footer">
+                            {this.formatBytes(dataInfo[k]["bytes"])}
                         </div>
                     </div>
                 </div>
