@@ -171,6 +171,11 @@ export class RunViewImpl extends Component {
           {duration !== null ? (
             <Descriptions.Item label='Duration'>{Utils.formatDuration(duration)}</Descriptions.Item>
           ) : null}
+          {Utils.hasDiff(tags) ? (
+            <Descriptions.Item label='Git Diff'>
+              {Utils.renderDiff(tags)}
+            </Descriptions.Item>
+           ) : null }
           <Descriptions.Item label='Status'>{status}</Descriptions.Item>
           {tags['mlflow.parentRunId'] !== undefined ? (
             <Descriptions.Item label='Parent Run'>

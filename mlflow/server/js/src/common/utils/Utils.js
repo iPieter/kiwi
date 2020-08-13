@@ -42,6 +42,7 @@ class Utils {
   static sourceNameTag = 'mlflow.source.name';
   static sourceTypeTag = 'mlflow.source.type';
   static gitCommitTag = 'mlflow.source.git.commit';
+  static gitDiffTag = 'mlflow.source.git.diff';
   static entryPointTag = 'mlflow.project.entryPoint';
   static backendTag = 'mlflow.project.backend';
   static userTag = 'mlflow.user';
@@ -379,6 +380,14 @@ class Utils {
     return '';
   }
 
+  static getGitDiff(runTags) {
+    const gitDiffTag = runTags[Utils.gitDiffTag];
+    if (gitDiffTag) {
+      return gitDiffTag.value;
+    }
+    return '';
+  }
+
   static getEntryPointName(runTags) {
     const entryPointTag = runTags[Utils.entryPointTag];
     if (entryPointTag) {
@@ -425,6 +434,23 @@ class Utils {
       }
     }
     return null;
+  }
+
+  static renderDiff(tags) {
+    const gitDiff = Utils.getGitDiff(tags);
+    return (
+        <div>
+          <b>Note: There have been changes since last commit.</b>
+            <br/><br/>
+          <div style={{whiteSpace: "pre-wrap", overflowX: "scroll", overflowY: "scroll", height: '100px'}}>
+             {gitDiff}
+          </div>
+        </div>
+    );
+  }
+
+  static hasDiff(tags) {
+    return Utils.getGitDiff(tags);
   }
 
   static pluralize(word, quantity) {
