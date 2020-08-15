@@ -450,7 +450,7 @@ class Utils {
   }
 
   static hasDiff(tags) {
-    return Utils.getGitDiff(tags);
+    return Utils.getGitDiff(tags) !== '';
   }
 
   static pluralize(word, quantity) {
