@@ -363,9 +363,9 @@ export class ExperimentView extends Component {
                         <div className="panel-body">
                             {content}
                         </div>
-                        <div className="panel-footer">
+                        {dataInfo[k].length > 0 ? <div className="panel-footer">
                             {this.formatBytes(dataInfo[k]["bytes"])}
-                        </div>
+                        </div> : ""}
                     </div>
                 </div>
             );
@@ -377,6 +377,13 @@ export class ExperimentView extends Component {
                 forceOpen={showNotesEditor}
             >
                 <div className="row">
+                    <div className="col-md-12" style={{marginBottom: "2ex"}}>
+                        <span className="label label-warning"  style={{marginRight: "0.5em"}}><i className="fas fa-exclamation-triangle"></i></span>
+                        This dataset uses standard (pre-defined) splits instead of random splits.
+                    </div>
+                </div>
+                <div className="row">
+
                     {panels}
                 </div>
             </CollapsibleSection>
