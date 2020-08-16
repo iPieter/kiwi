@@ -439,8 +439,10 @@ class Utils {
   static renderDiff(tags) {
     const gitDiff = Utils.getGitDiff(tags);
     return (
-      <div style={{whiteSpace: "pre-wrap", overflowX: "scroll", overflowY: "scroll", height: '75vh'}}>
-          {gitDiff}
+      <div
+        style={{ whiteSpace: 'pre-wrap', overflowX: 'scroll', overflowY: 'scroll', height: '75vh' }}
+      >
+        {gitDiff}
       </div>
     );
   }
