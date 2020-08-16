@@ -60,6 +60,15 @@ class Utils {
     }
   }
 
+  formatBytes(a, b) {
+    if (a === 0) return '0 Bytes';
+    const c = 1024,
+      d = b || 2,
+      e = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'],
+      f = Math.floor(Math.log(a) / Math.log(c));
+    return parseFloat((a / Math.pow(c, f)).toFixed(d)) + ' ' + e[f];
+  }
+
   /**
    * Helper method for that returns a truncated version of the passed-in string (with trailing
    * ellipsis) if the string is longer than maxLength. Otherwise, just returns the passed-in string.
