@@ -2,6 +2,7 @@
 Internal module implementing the fluent API, allowing management of an active
 MLflow run. This module is exposed to users at the top-level :py:mod:`mlflow` module.
 """
+import json
 import os
 
 import atexit
@@ -9,6 +10,9 @@ import time
 import logging
 import numpy as np
 import pandas as pd
+from typing import Dict, Callable
+
+from hyperopt import hp, fmin, rand
 
 from mlflow.entities import Run, RunStatus, Param, RunTag, Metric, ViewType, ExperimentTag
 from mlflow.entities.lifecycle_stage import LifecycleStage
@@ -54,8 +58,30 @@ def set_experiment(experiment_name):
     global _active_experiment_id
     _active_experiment_id = exp_id
 
+
 def set_experiment_tag(experiment_id: int, key, value):
     MlflowClient().set_experiment_tag(experiment_id, key, value)
+
+
+def start_experiment(experiment_id=None, hp_space: Dict = None, objective: Callable = None, max_evals=15,
+                     mode: str = "random"):
+    """
+    Start either a new Kiwi experiment, or continue on a pre-existing one.
+    """
+    if not experiment_id:
+        experiment_id: int = _get_experiment_id() if _get_experiment_id() \
+            else _active_run_stack[-1].info.experiment_id if _active_run_stack[-1] else None
+
+    print("current experiment: " + experiment_id)
+
+    hyperopt_space = {k: (hp.choice(k, hp_space[k][1]) if hp_space[k][0] == "choice" else hp.uniform(k, *hp_space[k][1])) for k in hp_space}
+
+    MlflowClient().set_experiment_tag(experiment_id, "kiwi.training.hyperparameters", json.dumps(hp_space))
+    MlflowClient().set_experiment_tag(experiment_id, "kiwi.training.mode", mode)
+
+    best = fmin(objective, hyperopt_space, algo=rand.suggest, max_evals=15)
+
+    print(best)
 
 
 class ActiveRun(Run):  # pylint: disable=W0223
@@ -328,7 +354,8 @@ def register_training_dataset(dataloader=None, dataset_location=None, experiment
     Register the dataset used for training the models. This is done for the current active
     experiment.
     """
-    _register_split_dataset(dataloader=dataloader, dataset_location=dataset_location, split="kiwi.datasets.training", experiment_id=experiment_id)
+    _register_split_dataset(dataloader=dataloader, dataset_location=dataset_location, split="kiwi.datasets.training",
+                            experiment_id=experiment_id)
 
 
 def register_test_dataset(dataloader=None, dataset_location=None, experiment_id=None):
@@ -336,7 +363,8 @@ def register_test_dataset(dataloader=None, dataset_location=None, experiment_id=
     Register the dataset used for training the models. This is done for the current active
     experiment.
     """
-    _register_split_dataset(dataloader=dataloader, dataset_location=dataset_location, split="kiwi.datasets.test", experiment_id=experiment_id)
+    _register_split_dataset(dataloader=dataloader, dataset_location=dataset_location, split="kiwi.datasets.test",
+                            experiment_id=experiment_id)
 
 
 def register_dev_dataset(dataloader=None, dataset_location=None, experiment_id=None):
@@ -344,7 +372,8 @@ def register_dev_dataset(dataloader=None, dataset_location=None, experiment_id=N
     Register the dataset used for training the models. This is done for the current active
     experiment.
     """
-    _register_split_dataset(dataloader=dataloader, dataset_location=dataset_location, split="kiwi.datasets.dev", experiment_id=experiment_id)
+    _register_split_dataset(dataloader=dataloader, dataset_location=dataset_location, split="kiwi.datasets.dev",
+                            experiment_id=experiment_id)
 
 
 def _register_split_dataset(split: str, dataloader=None, dataset_location=None, experiment_id=None):
@@ -487,7 +516,7 @@ def search_runs(experiment_ids=None, filter_string="", run_view_type=ViewType.AC
                 params[key].append(PARAM_NULL)
         new_params = set(run.data.params.keys()) - param_keys
         for p in new_params:
-            params[p] = [PARAM_NULL]*i  # Fill in null values for all previous runs
+            params[p] = [PARAM_NULL] * i  # Fill in null values for all previous runs
             params[p].append(run.data.params[p])
 
         # Metrics
@@ -499,7 +528,7 @@ def search_runs(experiment_ids=None, filter_string="", run_view_type=ViewType.AC
                 metrics[key].append(METRIC_NULL)
         new_metrics = set(run.data.metrics.keys()) - metric_keys
         for m in new_metrics:
-            metrics[m] = [METRIC_NULL]*i
+            metrics[m] = [METRIC_NULL] * i
             metrics[m].append(run.data.metrics[m])
 
         # Tags
@@ -511,7 +540,7 @@ def search_runs(experiment_ids=None, filter_string="", run_view_type=ViewType.AC
                 tags[key].append(TAG_NULL)
         new_tags = set(run.data.tags.keys()) - tag_keys
         for t in new_tags:
-            tags[t] = [TAG_NULL]*i
+            tags[t] = [TAG_NULL] * i
             tags[t].append(run.data.tags[t])
 
     data = {}
@@ -529,8 +558,8 @@ def _get_paginated_runs(experiment_ids, filter_string, run_view_type, max_result
                         order_by):
     all_runs = []
     next_page_token = None
-    while(len(all_runs) < max_results):
-        runs_to_get = max_results-len(all_runs)
+    while (len(all_runs) < max_results):
+        runs_to_get = max_results - len(all_runs)
         if runs_to_get < NUM_RUNS_PER_PAGE_PANDAS:
             runs = MlflowClient().search_runs(experiment_ids, filter_string, run_view_type,
                                               runs_to_get, order_by, next_page_token)
