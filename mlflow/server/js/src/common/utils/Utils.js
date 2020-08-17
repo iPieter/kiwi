@@ -61,7 +61,7 @@ class Utils {
     }
   }
 
-  formatBytes(a, b) {
+  static formatBytes(a, b) {
     if (a === 0) return '0 Bytes';
     const c = 1024,
       d = b || 2,
