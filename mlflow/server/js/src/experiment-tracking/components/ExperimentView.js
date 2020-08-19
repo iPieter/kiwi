@@ -478,6 +478,7 @@ export class ExperimentView extends Component {
         <div className='ExperimentView-info'>{this.renderNoteSection(noteInfo)}</div>
         <div className='ExperimentView-info'>{this.renderDataSection(dataInfo)}</div>
         <div className='ExperimentView-info'>{this.renderHyperparameters(hpInfo)}</div>
+        <div className='ExperimentView-info'>{this.renderHyperparameterStats(this.props.metricsList)}</div>
         <div className='ExperimentView-runs runs-table-flex-container'>
           {this.props.searchRunsError ? (
             <div className='error-message'>
@@ -941,6 +942,24 @@ export class ExperimentView extends Component {
     });
 
     return ExperimentView.tableToCsv(columns, data);
+  }
+
+  renderHyperparameterStats(metrics) {
+
+    let output = [];
+    for (let run in metrics) {
+            if (metrics.hasOwnProperty(run)) {
+              console.log(metrics[run]);
+
+              for (let pair in metrics[run]) {
+                if (metrics[run][pair]['key'] == "test_eval_acc") {
+                  output.push(metrics[run][pair]['value']);
+                }
+              }
+            }
+    }
+
+    return JSON.stringify(HPInfo.samplemax(output));
   }
 }
 
