@@ -1,17 +1,16 @@
-import { MLFLOW_INTERNAL_PREFIX } from '../../common/utils/TagUtils';
+import {KIWI_INTERNAL_PREFIX} from '../../common/utils/TagUtils';
 
-export const NOTE_CONTENT_TAG = MLFLOW_INTERNAL_PREFIX + 'note.content';
+export const CONTENT_TAG = KIWI_INTERNAL_PREFIX + "training.hyperparameters";
 
-export class NoteInfo {
-  constructor(content) {
-    this.content = content;
-  }
+export class HPInfo {
 
   static fromTags = (tags) => {
-    const contentTag = Object.values(tags).find((t) => t.getKey() === NOTE_CONTENT_TAG);
+    console.log(tags)
+    const contentTag = Object.values(tags).find((t) => t.getKey() === CONTENT_TAG);
     if (contentTag === undefined) {
       return undefined;
     }
-    return new NoteInfo(contentTag.getValue());
+
+    return contentTag.getValue();
   };
 }

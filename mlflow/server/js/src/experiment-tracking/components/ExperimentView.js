@@ -38,6 +38,7 @@ import _ from 'lodash';
 import { ColumnTypes } from '../constants';
 import { getUUID } from '../../common/utils/ActionUtils';
 import { IconButton } from '../../common/components/IconButton';
+import {HPInfo} from "../utils/HPUtils";
 
 export const DEFAULT_EXPANDED_VALUE = false;
 
@@ -331,7 +332,6 @@ export class ExperimentView extends Component {
   }
 
   renderDataSection(dataInfo) {
-    const { showNotesEditor } = this.state;
     const panels = [];
 
     for (const k in dataInfo) {
@@ -369,7 +369,7 @@ export class ExperimentView extends Component {
     }
 
     return (
-      <CollapsibleSection title={<span>Used datasets</span>} forceOpen={showNotesEditor}>
+      <CollapsibleSection title={<span>Used datasets</span>}>
         <div className='row'>
           <div className='col-md-12' style={{ marginBottom: '2ex' }}>
             <span className='label label-warning' style={{ marginRight: '0.5em' }}>
@@ -379,6 +379,16 @@ export class ExperimentView extends Component {
           </div>
         </div>
         <div className='row'>{panels}</div>
+      </CollapsibleSection>
+    );
+  }
+
+  renderHyperparameters(hpInfo) {
+    return (
+      <CollapsibleSection title={<span>Hyperparameters</span>}>
+        <div className='row'>
+          {JSON.stringify(hpInfo)}
+        </div>
       </CollapsibleSection>
     );
   }
@@ -430,8 +440,11 @@ export class ExperimentView extends Component {
     const compareDisabled = Object.keys(this.state.runsSelected).length < 2;
     const deleteDisabled = Object.keys(this.state.runsSelected).length < 1;
     const restoreDisabled = Object.keys(this.state.runsSelected).length < 1;
+
     const noteInfo = NoteInfo.fromTags(experimentTags);
     const dataInfo = DataInfo.fromTags(experimentTags);
+    const hpInfo = HPInfo.fromTags(experimentTags);
+
     const searchInputHelpTooltipContent = (
       <div className='search-input-tooltip-content'>
         Search runs using a simplified version of the SQL <b>WHERE</b> clause.
@@ -464,6 +477,7 @@ export class ExperimentView extends Component {
         </Descriptions>
         <div className='ExperimentView-info'>{this.renderNoteSection(noteInfo)}</div>
         <div className='ExperimentView-info'>{this.renderDataSection(dataInfo)}</div>
+        <div className='ExperimentView-info'>{this.renderHyperparameters(hpInfo)}</div>
         <div className='ExperimentView-runs runs-table-flex-container'>
           {this.props.searchRunsError ? (
             <div className='error-message'>
