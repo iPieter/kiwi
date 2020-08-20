@@ -11,3 +11,9 @@ pypi-publisher
 scikit-learn
 scipy
 kubernetes
+
+psutil
+py-cpuinfo
+tensorflow
+pytorch
+
