@@ -7,6 +7,7 @@ import projectSvg from '../static/project.svg';
 import jobSvg from '../static/job.svg';
 import qs from 'qs';
 import { MLFLOW_INTERNAL_PREFIX } from './TagUtils';
+import { KIWI_INTERNAL_PREFIX} from "./TagUtils";
 import { message } from 'antd';
 import _ from 'lodash';
 import { ErrorCodes } from '../constants';
@@ -46,6 +47,11 @@ class Utils {
   static entryPointTag = 'mlflow.project.entryPoint';
   static backendTag = 'mlflow.project.backend';
   static userTag = 'mlflow.user';
+  static cpuTag = 'kiwi.system.hardware.cpu'
+  static memTag = 'kiwi.system.hardware.memory'
+  static diskTag = 'kiwi.system.hardware.disk'
+  static gpuTag = 'kiwi.system.hardware.gpu'
+  static osTag = 'kiwi.system.os'
 
   static formatMetric(value) {
     if (value === 0) {
@@ -397,6 +403,33 @@ class Utils {
     return '';
   }
 
+  static getCPUInfo(runTags) {
+    return this.extractArray(runTags[Utils.cpuTag]);
+  }
+
+  static getMemInfo(runTags) {
+    return this.extractArray(runTags[Utils.memTag]);
+  }
+
+  static getDiskInfo(runTags) {
+    return this.extractArray(runTags[Utils.diskTag]);
+  }
+
+  static getGPUInfo(runTags) {
+    return this.extractArray(runTags[Utils.gpuTag]);
+  }
+
+  static getOSInfo(runTags) {
+    return this.extractArray(runTags[Utils.osTag]);
+  }
+
+
+  // Extracts the Javascript array from the string that was passed within the JSON.
+  // This feels like a dirty workaround, there's probably a more elegant way to handle this.
+  static extractArray(string) {
+    return JSON.parse(string["value"].replaceAll("'","\""));
+  }
+
   static getEntryPointName(runTags) {
     const entryPointTag = runTags[Utils.entryPointTag];
     if (entryPointTag) {
@@ -573,7 +606,8 @@ class Utils {
     // Collate tag objects into list of [key, value] lists and filter MLflow-internal tags
     return Object.values(tags)
       .map((t) => [t.getKey(), t.getValue()])
-      .filter((t) => !t[0].startsWith(MLFLOW_INTERNAL_PREFIX));
+      .filter((t) => !t[0].startsWith(MLFLOW_INTERNAL_PREFIX))
+      .filter((t) => !t[0].startsWith(KIWI_INTERNAL_PREFIX));
   }
 
   static getVisibleTagKeyList(tagsList) {

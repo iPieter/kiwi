@@ -12,11 +12,13 @@ from mlflow.exceptions import ExecutionException
 from mlflow.projects import _project_spec
 from mlflow import tracking
 from mlflow.tracking.context.git_context import _get_git_commit, _get_git_diff
+from mlflow.tracking.context.system_context import _get_cpu_info, _get_mem_info, _get_disk_info, _get_gpu_info, _get_os_info
 from mlflow.tracking import fluent
 from mlflow.tracking.context.default_context import _get_user
 from mlflow.utils.mlflow_tags import (
     MLFLOW_USER, MLFLOW_SOURCE_NAME, MLFLOW_SOURCE_TYPE, MLFLOW_GIT_COMMIT, MLFLOW_GIT_DIFF, MLFLOW_GIT_REPO_URL,
     MLFLOW_GIT_BRANCH, LEGACY_MLFLOW_GIT_REPO_URL, LEGACY_MLFLOW_GIT_BRANCH_NAME,
+    KIWI_SYSTEM_HW_CPU, KIWI_SYSTEM_HW_MEMORY, KIWI_SYSTEM_HW_DISK, KIWI_SYSTEM_HW_GPU, KIWI_SYSTEM_OS,
     MLFLOW_PROJECT_ENTRY_POINT, MLFLOW_PARENT_RUN_ID,
 )
 
@@ -221,6 +223,14 @@ def _create_run(uri, experiment_id, work_dir, version, entry_point, parameters):
         MLFLOW_SOURCE_TYPE: SourceType.to_string(SourceType.PROJECT),
         MLFLOW_PROJECT_ENTRY_POINT: entry_point
     }
+
+    # System tags - all include a string header, thus none of them is empty
+    tags[KIWI_SYSTEM_HW_CPU] = _get_cpu_info()
+    tags[KIWI_SYSTEM_HW_MEMORY] = _get_mem_info()
+    tags[KIWI_SYSTEM_HW_DISK] = _get_disk_info()
+    tags[KIWI_SYSTEM_HW_GPU] = _get_gpu_info()
+    tags[KIWI_SYSTEM_OS] = _get_os_info()
+
     if source_version is not None:
         tags[MLFLOW_GIT_COMMIT] = source_version
         tags[MLFLOW_GIT_DIFF] = git_diff
