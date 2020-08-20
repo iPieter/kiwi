@@ -2,6 +2,7 @@ import entrypoints
 import warnings
 
 from mlflow.tracking.context.default_context import DefaultRunContext
+from mlflow.tracking.context.system_context import HardwareRunContext
 from mlflow.tracking.context.git_context import GitRunContext
 from mlflow.tracking.context.databricks_notebook_context import DatabricksNotebookRunContext
 from mlflow.tracking.context.databricks_job_context import DatabricksJobRunContext
@@ -45,6 +46,7 @@ class RunContextProviderRegistry(object):
 
 _run_context_provider_registry = RunContextProviderRegistry()
 _run_context_provider_registry.register(DefaultRunContext)
+_run_context_provider_registry.register(HardwareRunContext)
 _run_context_provider_registry.register(GitRunContext)
 _run_context_provider_registry.register(DatabricksNotebookRunContext)
 _run_context_provider_registry.register(DatabricksJobRunContext)

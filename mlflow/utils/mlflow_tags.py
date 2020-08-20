@@ -39,6 +39,12 @@ MLFLOW_DATABRICKS_JOB_TYPE = "mlflow.databricks.jobType"
 
 MLFLOW_PROJECT_BACKEND = "mlflow.project.backend"
 
+KIWI_SYSTEM_HW_CPU = "kiwi.system.hardware.cpu"
+KIWI_SYSTEM_HW_MEMORY = "kiwi.system.hardware.memory"
+KIWI_SYSTEM_HW_DISK = "kiwi.system.hardware.disk"
+KIWI_SYSTEM_HW_GPU = "kiwi.system.hardware.gpu"
+KIWI_SYSTEM_OS = "kiwi.system.os"
+
 # The following legacy tags are deprecated and will be removed by MLflow 1.0.
 LEGACY_MLFLOW_GIT_BRANCH_NAME = "mlflow.gitBranchName"  # Replaced with mlflow.source.git.branch
 LEGACY_MLFLOW_GIT_REPO_URL = "mlflow.gitRepoURL"  # Replaced with mlflow.source.git.repoURL

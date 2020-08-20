@@ -11,6 +11,7 @@ import ArtifactPage from './ArtifactPage';
 import { getLatestMetrics } from '../reducers/MetricReducer';
 import { Experiment } from '../sdk/MlflowMessages';
 import Utils from '../../common/utils/Utils';
+import getSysInfo from '../../common/utils/Utils';
 import { NOTE_CONTENT_TAG, NoteInfo } from '../utils/NoteUtils';
 import { BreadcrumbTitle } from './BreadcrumbTitle';
 import { RenameRunModal } from './modals/RenameRunModal';
@@ -254,6 +255,33 @@ export class RunViewImpl extends Component {
               styles={tableStyles}
             />
           </CollapsibleSection>
+          <CollapsibleSection title='System Information'>
+            <HtmlTableView
+              columns={['CPU Information', '']}
+              values={getCPUValues(tags)}
+              styles={tableStyles}
+            />
+            <HtmlTableView
+              columns={['Memory Information', '']}
+              values={getMemValues(tags)}
+              styles={tableStyles}
+            />
+            <HtmlTableView
+              columns={['Disk Information', '']}
+              values={getDiskValues(tags)}
+              styles={tableStyles}
+            />
+            <HtmlTableView
+              columns={['GPU Information', '']}
+              values={getGPUValues(tags)}
+              styles={tableStyles}
+            />
+            <HtmlTableView
+              columns={['OS Information', '']}
+              values={getOSValues(tags)}
+              styles={tableStyles}
+            />
+          </CollapsibleSection>
           <CollapsibleSection title='Tags'>
             <EditableTagsTableView runUuid={runUuid} tags={tags} />
           </CollapsibleSection>
@@ -311,6 +339,36 @@ const getMetricValues = (latestMetrics, getMetricPagePath) => {
       ];
     });
 };
+
+const getCPUValues = (tags) => {
+  return Utils.getCPUInfo(tags);
+};
+
+const getMemValues = (tags) => {
+  return Utils.getMemInfo(tags);
+};
+
+const getDiskValues = (tags) => {
+  return Utils.getDiskInfo(tags);
+};
+
+const getGPUValues = (tags) => {
+  return Utils.getGPUInfo(tags);
+};
+
+const getOSValues = (tags) => {
+  return Utils.getOSInfo(tags);
+};
+
+// Exclude the system hardware information from being displayed a second time under "Tags"
+// const getNonSystemTags = (tags) => {
+//   let nonSystemTags = {};
+//   for (const [key, value] of Object.entries(tags)) {
+//     if (!key.match("kiwiml.system")) {
+//       nonSystemTags[key] = value;
+//     }
+//   }
+// }
 
 const shellEscape = (str) => {
   if (/["\r\n\t ]/.test(str)) {
