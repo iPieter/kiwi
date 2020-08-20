@@ -1,5 +1,5 @@
 <p align="center"> 
-    <img src="res/logo.png" alt="Tackling the Reproducibility Crisis: Towards Fully Versioned Machine Learning with Kiwi" width="75%">
+    <img src="./res/logo.png alt="Tackling the Reproducibility Crisis: Towards Fully Versioned Machine Learning with Kiwi" width="75%">
  </p>
 
 # Kiwi
