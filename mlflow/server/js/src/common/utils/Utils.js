@@ -7,6 +7,10 @@ import projectSvg from '../static/project.svg';
 import jobSvg from '../static/job.svg';
 import qs from 'qs';
 import { MLFLOW_INTERNAL_PREFIX } from './TagUtils';
+<<<<<<< Updated upstream
+=======
+import { KIWI_INTERNAL_PREFIX } from './TagUtils';
+>>>>>>> Stashed changes
 import { message } from 'antd';
 import _ from 'lodash';
 import { ErrorCodes } from '../constants';
@@ -46,6 +50,14 @@ class Utils {
   static entryPointTag = 'mlflow.project.entryPoint';
   static backendTag = 'mlflow.project.backend';
   static userTag = 'mlflow.user';
+<<<<<<< Updated upstream
+=======
+  static cpuTag = 'kiwi.system.hardware.cpu';
+  static memTag = 'kiwi.system.hardware.memory';
+  static diskTag = 'kiwi.system.hardware.disk';
+  static gpuTag = 'kiwi.system.hardware.gpu';
+  static osTag = 'kiwi.system.os';
+>>>>>>> Stashed changes
 
   static formatMetric(value) {
     if (value === 0) {
@@ -397,6 +409,46 @@ class Utils {
     return '';
   }
 
+<<<<<<< Updated upstream
+=======
+  //System info contains non-empty headers, no need to check for empty string:
+  static getCPUInfo(runTags) {
+    if (Utils.cpuTag in runTags) return this.extractArray(runTags[Utils.cpuTag]);
+    else return '';
+  }
+
+  static getMemInfo(runTags) {
+    if (Utils.memTag in runTags) return this.extractArray(runTags[Utils.memTag]);
+    else return '';
+  }
+
+  static getDiskInfo(runTags) {
+    if (Utils.diskTag in runTags)  return this.extractArray(runTags[Utils.diskTag]);
+    else return '';
+  }
+
+  static getGPUInfo(runTags) {
+    if (Utils.gpuTag in runTags)  return this.extractArray(runTags[Utils.gpuTag]);
+    else return '';
+  }
+
+  static getOSInfo(runTags) {
+    if (Utils.osTag in runTags) return this.extractArray(runTags[Utils.osTag]);
+    else return '';
+  }
+
+  // Extracts the Javascript array from the string that was passed within the JSON.
+  // This feels like a dirty workaround, there's probably a more elegant way to handle this.
+  static extractArray(string) {
+    const array = JSON.parse(string['value'].replaceAll("'", '"'));
+    if (array !== undefined)
+      return array;
+    else
+      return [];
+
+  }
+
+>>>>>>> Stashed changes
   static getEntryPointName(runTags) {
     const entryPointTag = runTags[Utils.entryPointTag];
     if (entryPointTag) {
