@@ -79,7 +79,7 @@ def start_experiment(experiment_id=None, hp_space: Dict = None, objective: Calla
     MlflowClient().set_experiment_tag(experiment_id, "kiwi.training.hyperparameters", json.dumps(hp_space))
     MlflowClient().set_experiment_tag(experiment_id, "kiwi.training.mode", mode)
 
-    best = fmin(objective, hyperopt_space, algo=rand.suggest if mode == "random" else tpe.suggest, max_evals=15)
+    best = fmin(objective, hyperopt_space, algo=rand.suggest if mode == "random" else tpe.suggest, max_evals=max_evals)
 
     print(best)
 

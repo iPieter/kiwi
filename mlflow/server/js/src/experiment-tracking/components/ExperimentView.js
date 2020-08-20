@@ -27,7 +27,7 @@ import { NoteInfo, NOTE_CONTENT_TAG } from '../utils/NoteUtils';
 import { DataInfo } from '../utils/DataUtils';
 import LocalStorageUtils from '../../common/utils/LocalStorageUtils';
 import { ExperimentViewPersistedState } from '../sdk/MlflowLocalStorageMessages';
-import { Icon, Popover, Descriptions } from 'antd';
+import { Icon, Popover, Descriptions, TreeSelect } from 'antd';
 import { CollapsibleSection } from '../../common/components/CollapsibleSection';
 import { EditableNote } from '../../common/components/EditableNote';
 import classNames from 'classnames';
@@ -38,7 +38,7 @@ import _ from 'lodash';
 import { ColumnTypes } from '../constants';
 import { getUUID } from '../../common/utils/ActionUtils';
 import { IconButton } from '../../common/components/IconButton';
-import {HPInfo} from "../utils/HPUtils";
+import { HPInfo } from '../utils/HPUtils';
 
 export const DEFAULT_EXPANDED_VALUE = false;
 
@@ -50,6 +50,7 @@ export class ExperimentView extends Component {
     this.onDownloadCsv = this.onDownloadCsv.bind(this);
     this.onParamKeyFilterInput = this.onParamKeyFilterInput.bind(this);
     this.onMetricKeyFilterInput = this.onMetricKeyFilterInput.bind(this);
+    this.onMetricsHPKeyFilterInput = this.onMetricsHPKeyFilterInput.bind(this);
     this.onSearchInput = this.onSearchInput.bind(this);
     this.onSearch = this.onSearch.bind(this);
     this.onClear = this.onClear.bind(this);
@@ -195,11 +196,11 @@ export class ExperimentView extends Component {
   }
 
   componentDidMount() {
-    let pageTitle = 'MLflow Experiment';
+    let pageTitle = 'Kiwi Experiment';
     if (this.props.experiment.name) {
       const experimentNameParts = this.props.experiment.name.split('/');
       const experimentSuffix = experimentNameParts[experimentNameParts.length - 1];
-      pageTitle = `${experimentSuffix} - MLflow Experiment`;
+      pageTitle = `${experimentSuffix} - Kiwi Experiment`;
     }
     Utils.updatePageTitle(pageTitle);
   }
@@ -386,9 +387,7 @@ export class ExperimentView extends Component {
   renderHyperparameters(hpInfo) {
     return (
       <CollapsibleSection title={<span>Hyperparameters</span>}>
-        <div className='row'>
-          {JSON.stringify(hpInfo)}
-        </div>
+        <div className='row'>{JSON.stringify(hpInfo)}</div>
       </CollapsibleSection>
     );
   }
@@ -478,7 +477,12 @@ export class ExperimentView extends Component {
         <div className='ExperimentView-info'>{this.renderNoteSection(noteInfo)}</div>
         <div className='ExperimentView-info'>{this.renderDataSection(dataInfo)}</div>
         <div className='ExperimentView-info'>{this.renderHyperparameters(hpInfo)}</div>
-        <div className='ExperimentView-info'>{this.renderHyperparameterStats(this.props.metricsList)}</div>
+        <div className='ExperimentView-info'>
+          {this.renderHyperParameterSelection(this.props.metricKeyList)}
+        </div>
+        <div className='ExperimentView-info'>
+          {this.renderHyperparameterStats(this.props.metricsList, this.props.metricKeyList)}
+        </div>
         <div className='ExperimentView-runs runs-table-flex-container'>
           {this.props.searchRunsError ? (
             <div className='error-message'>
@@ -801,6 +805,7 @@ export class ExperimentView extends Component {
     const {
       paramKeyFilterInput,
       metricKeyFilterInput,
+      metricsHPKeyFilterInput,
       searchInput,
       lifecycleFilterInput,
     } = this.state;
@@ -944,22 +949,48 @@ export class ExperimentView extends Component {
     return ExperimentView.tableToCsv(columns, data);
   }
 
-  renderHyperparameterStats(metrics) {
+  renderHyperParameterSelection(metricKeys) {
+    return (
+      <div>
+        <div>
+          <div style={{ marginTop: 20 }}>Metrics:</div>
+          <TreeSelect
+            className='metrics-select'
+            searchPlaceholder='Please select metrics'
+            showCheckedStrategy={TreeSelect.SHOW_PARENT}
+            treeCheckable
+            treeData={metricKeys.map((k) => ({ title: k, value: k, label: k }))}
+            onChange={this.onMetricsHPKeyFilterInput}
+          />
+        </div>
+      </div>
+    );
+  }
 
+  onMetricsHPKeyFilterInput(values) {
+    console.log(values);
+    this.setState({ metricsHPKeyFilterInput: values });
+  }
+
+  renderHyperparameterStats(metrics, metricKeys) {
     let output = [];
-    for (let run in metrics) {
-            if (metrics.hasOwnProperty(run)) {
-              console.log(metrics[run]);
+    for (let m in this.state.metricsHPKeyFilterInput) {
+      let sample = [];
+      for (let run in metrics) {
+        if (metrics.hasOwnProperty(run)) {
+          //console.log(metrics[run]);
 
-              for (let pair in metrics[run]) {
-                if (metrics[run][pair]['key'] == "test_eval_acc") {
-                  output.push(metrics[run][pair]['value']);
-                }
-              }
+          for (let pair in metrics[run]) {
+            if (metrics[run][pair]['key'] == this.state.metricsHPKeyFilterInput[m]) {
+              sample.push(metrics[run][pair]['value']);
             }
+          }
+        }
+      }
+      output.push(<div>{JSON.stringify(HPInfo.samplemax(sample))}</div>);
     }
 
-    return JSON.stringify(HPInfo.samplemax(output));
+    return <CollapsibleSection title='Estimated maximum performance'>{output}</CollapsibleSection>;
   }
 }
 
