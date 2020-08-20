@@ -24,9 +24,10 @@ import ExperimentViewUtil from './ExperimentViewUtil';
 import DeleteRunModal from './modals/DeleteRunModal';
 import RestoreRunModal from './modals/RestoreRunModal';
 import { NoteInfo, NOTE_CONTENT_TAG } from '../utils/NoteUtils';
+import { DataInfo } from '../utils/DataUtils';
 import LocalStorageUtils from '../../common/utils/LocalStorageUtils';
 import { ExperimentViewPersistedState } from '../sdk/MlflowLocalStorageMessages';
-import { Icon, Popover, Descriptions } from 'antd';
+import { Icon, Popover, Descriptions, TreeSelect } from 'antd';
 import { CollapsibleSection } from '../../common/components/CollapsibleSection';
 import { EditableNote } from '../../common/components/EditableNote';
 import classNames from 'classnames';
@@ -37,6 +38,7 @@ import _ from 'lodash';
 import { ColumnTypes } from '../constants';
 import { getUUID } from '../../common/utils/ActionUtils';
 import { IconButton } from '../../common/components/IconButton';
+import { HPInfo } from '../utils/HPUtils';
 
 export const DEFAULT_EXPANDED_VALUE = false;
 
@@ -48,6 +50,7 @@ export class ExperimentView extends Component {
     this.onDownloadCsv = this.onDownloadCsv.bind(this);
     this.onParamKeyFilterInput = this.onParamKeyFilterInput.bind(this);
     this.onMetricKeyFilterInput = this.onMetricKeyFilterInput.bind(this);
+    this.onMetricsHPKeyFilterInput = this.onMetricsHPKeyFilterInput.bind(this);
     this.onSearchInput = this.onSearchInput.bind(this);
     this.onSearch = this.onSearch.bind(this);
     this.onClear = this.onClear.bind(this);
@@ -193,11 +196,11 @@ export class ExperimentView extends Component {
   }
 
   componentDidMount() {
-    let pageTitle = 'MLflow Experiment';
+    let pageTitle = 'Kiwi Experiment';
     if (this.props.experiment.name) {
       const experimentNameParts = this.props.experiment.name.split('/');
       const experimentSuffix = experimentNameParts[experimentNameParts.length - 1];
-      pageTitle = `${experimentSuffix} - MLflow Experiment`;
+      pageTitle = `${experimentSuffix} - Kiwi Experiment`;
     }
     Utils.updatePageTitle(pageTitle);
   }
@@ -329,6 +332,66 @@ export class ExperimentView extends Component {
     );
   }
 
+  renderDataSection(dataInfo) {
+    const panels = [];
+
+    for (const k in dataInfo) {
+      if (dataInfo.hasOwnProperty(k)) {
+        const content =
+          dataInfo[k].length > 0 ? (
+            <div>
+              <p>
+                <i className='fas fa-file'></i> {dataInfo[k]['path']}
+              </p>
+              <p>
+                <i className='fas fa-box'></i> {dataInfo[k]['length']} items
+              </p>
+            </div>
+          ) : (
+            <p className='text-muted'>The {k} split is not used</p>
+          );
+
+        panels.push(
+          <div className={'col-md-' + 12 / Object.keys(dataInfo).length}>
+            <div className='panel panel-default'>
+              <div className='panel-heading'>
+                <h3 className='panel-title'>{k}</h3>
+              </div>
+              <div className='panel-body'>{content}</div>
+              {dataInfo[k].length > 0 ? (
+                <div className='panel-footer'>{Utils.formatBytes(dataInfo[k]['bytes'])}</div>
+              ) : (
+                ''
+              )}
+            </div>
+          </div>,
+        );
+      }
+    }
+
+    return (
+      <CollapsibleSection title={<span>Used datasets</span>}>
+        <div className='row'>
+          <div className='col-md-12' style={{ marginBottom: '2ex' }}>
+            <span className='label label-warning' style={{ marginRight: '0.5em' }}>
+              <i className='fas fa-exclamation-triangle'></i>
+            </span>
+            This dataset uses standard (pre-defined) splits instead of random splits.
+          </div>
+        </div>
+        <div className='row'>{panels}</div>
+      </CollapsibleSection>
+    );
+  }
+
+  renderHyperparameters(hpInfo) {
+    return (
+      <CollapsibleSection title={<span>Hyperparameters</span>}>
+        <div className='row'>{JSON.stringify(hpInfo)}</div>
+      </CollapsibleSection>
+    );
+  }
+
   handleColumnSelectionCheck = (categorizedUncheckedKeys) => {
     this.setState({
       persistedState: new ExperimentViewPersistedState({
@@ -376,7 +439,11 @@ export class ExperimentView extends Component {
     const compareDisabled = Object.keys(this.state.runsSelected).length < 2;
     const deleteDisabled = Object.keys(this.state.runsSelected).length < 1;
     const restoreDisabled = Object.keys(this.state.runsSelected).length < 1;
+
     const noteInfo = NoteInfo.fromTags(experimentTags);
+    const dataInfo = DataInfo.fromTags(experimentTags);
+    const hpInfo = HPInfo.fromTags(experimentTags);
+
     const searchInputHelpTooltipContent = (
       <div className='search-input-tooltip-content'>
         Search runs using a simplified version of the SQL <b>WHERE</b> clause.
@@ -408,6 +475,14 @@ export class ExperimentView extends Component {
           {this.renderArtifactLocation()}
         </Descriptions>
         <div className='ExperimentView-info'>{this.renderNoteSection(noteInfo)}</div>
+        <div className='ExperimentView-info'>{this.renderDataSection(dataInfo)}</div>
+        <div className='ExperimentView-info'>{this.renderHyperparameters(hpInfo)}</div>
+        <div className='ExperimentView-info'>
+          {this.renderHyperParameterSelection(this.props.metricKeyList)}
+        </div>
+        <div className='ExperimentView-info'>
+          {this.renderHyperparameterStats(this.props.metricsList, this.props.metricKeyList)}
+        </div>
         <div className='ExperimentView-runs runs-table-flex-container'>
           {this.props.searchRunsError ? (
             <div className='error-message'>
@@ -730,6 +805,7 @@ export class ExperimentView extends Component {
     const {
       paramKeyFilterInput,
       metricKeyFilterInput,
+      metricsHPKeyFilterInput,
       searchInput,
       lifecycleFilterInput,
     } = this.state;
@@ -872,12 +948,54 @@ export class ExperimentView extends Component {
 
     return ExperimentView.tableToCsv(columns, data);
   }
+
+  renderHyperParameterSelection(metricKeys) {
+    return (
+      <div>
+        <div>
+          <div style={{ marginTop: 20 }}>Metrics:</div>
+          <TreeSelect
+            className='metrics-select'
+            searchPlaceholder='Please select metrics'
+            showCheckedStrategy={TreeSelect.SHOW_PARENT}
+            treeCheckable
+            treeData={metricKeys.map((k) => ({ title: k, value: k, label: k }))}
+            onChange={this.onMetricsHPKeyFilterInput}
+          />
+        </div>
+      </div>
+    );
+  }
+
+  onMetricsHPKeyFilterInput(values) {
+    console.log(values);
+    this.setState({ metricsHPKeyFilterInput: values });
+  }
+
+  renderHyperparameterStats(metrics, metricKeys) {
+    let output = [];
+    for (let m in this.state.metricsHPKeyFilterInput) {
+      let sample = [];
+      for (let run in metrics) {
+        if (metrics.hasOwnProperty(run)) {
+          //console.log(metrics[run]);
+
+          for (let pair in metrics[run]) {
+            if (metrics[run][pair]['key'] == this.state.metricsHPKeyFilterInput[m]) {
+              sample.push(metrics[run][pair]['value']);
+            }
+          }
+        }
+      }
+      output.push(<div>{JSON.stringify(HPInfo.samplemax(sample))}</div>);
+    }
+
+    return <CollapsibleSection title='Estimated maximum performance'>{output}</CollapsibleSection>;
+  }
 }
 
 export const mapStateToProps = (state, ownProps) => {
   const { lifecycleFilter } = ownProps;
-
-  // The runUuids we should serve.
   const { runInfosByUuid } = state.entities;
   const runUuids = Object.values(runInfosByUuid)
     .filter((r) => r.experiment_id === ownProps.experimentId.toString())

@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import './App.css';
-import logo from '../../common/static/home-logo.png';
+import logo from '../../common/static/home-logo-black.png';
 import { HashRouter as Router, Route, Link, NavLink } from 'react-router-dom';
 import { RunPage } from './RunPage';
 import Routes from '../routes';
@@ -24,7 +24,7 @@ import { ModelPage } from '../../model-registry/components/ModelPage';
 import CompareModelVersionsPage from '../../model-registry/components/CompareModelVersionsPage';
 
 const classNames = {
-  activeNavLink: { borderBottom: '4px solid #43C9ED' },
+  activeNavLink: { borderBottom: '2px solid #2C3E50' },
 };
 
 class App extends Component {
