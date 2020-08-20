@@ -1,7 +1,7 @@
 import mock
 import os
 
-from mlflow.store.db import utils
+from kiwi.store.db import utils
 
 
 def test_create_sqlalchemy_engine_inject_pool_options():

@@ -6,7 +6,7 @@ import sys
 
 import psutil
 
-import mlflow
+import kiwi
 
 
 def main(expected_env_name):
@@ -14,7 +14,7 @@ def main(expected_env_name):
     assert actual_conda_env == expected_env_name,\
         "Script expected to be run from conda env %s but was actually run from env" \
         " %s" % (expected_env_name, actual_conda_env)
-    mlflow.log_metric("CPU usage", psutil.cpu_percent())
+    kiwi.log_metric("CPU usage", psutil.cpu_percent())
 
 
 if __name__ == "__main__":

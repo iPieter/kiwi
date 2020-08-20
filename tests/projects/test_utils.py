@@ -4,13 +4,13 @@ import tempfile
 import mock
 import pytest
 
-import mlflow
-from mlflow.exceptions import ExecutionException
-from mlflow.projects import _project_spec
-from mlflow.projects.utils import (
+import kiwi
+from kiwi.exceptions import ExecutionException
+from kiwi.projects import _project_spec
+from kiwi.projects.utils import (
     _get_storage_dir, _is_valid_branch_name, _is_zip_uri, _fetch_project, _parse_subdirectory,
     get_or_create_run, fetch_and_validate_project, load_project)
-from mlflow.utils.mlflow_tags import MLFLOW_PROJECT_ENTRY_POINT, MLFLOW_SOURCE_NAME
+from kiwi.utils.mlflow_tags import MLFLOW_PROJECT_ENTRY_POINT, MLFLOW_SOURCE_NAME
 from tests.projects.utils import (
     assert_dirs_equal, GIT_PROJECT_URI, TEST_PROJECT_DIR, TEST_PROJECT_NAME)
 
@@ -135,7 +135,7 @@ def test_fetch_create_and_log(tmpdir):
     mock_fetched_project = _project_spec.Project(None,
                                                  {entry_point_name: entry_point},
                                                  None, "my_project")
-    experiment_id = mlflow.create_experiment("test_fetch_project")
+    experiment_id = kiwi.create_experiment("test_fetch_project")
     expected_dir = tmpdir
     project_uri = "http://someuri/myproject.git"
     user_param = {"method_name": "newton"}
@@ -153,7 +153,7 @@ def test_fetch_create_and_log(tmpdir):
                 version=None, entry_point=entry_point_name, parameters=user_param)
 
             # check tags
-            run = mlflow.get_run(active_run.info.run_id)
+            run = kiwi.get_run(active_run.info.run_id)
             assert MLFLOW_PROJECT_ENTRY_POINT in run.data.tags
             assert MLFLOW_SOURCE_NAME in run.data.tags
             assert entry_point_name == run.data.tags[MLFLOW_PROJECT_ENTRY_POINT]

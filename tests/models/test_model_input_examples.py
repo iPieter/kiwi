@@ -4,11 +4,11 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from mlflow.models.signature import infer_signature
-from mlflow.models.utils import _Example
-from mlflow.types.utils import TensorsNotSupportedException
-from mlflow.utils.file_utils import TempDir
-from mlflow.utils.proto_json_utils import _dataframe_from_json
+from kiwi.models.signature import infer_signature
+from kiwi.models.utils import _Example
+from kiwi.types.utils import TensorsNotSupportedException
+from kiwi.utils.file_utils import TempDir
+from kiwi.utils.proto_json_utils import _dataframe_from_json
 
 
 @pytest.fixture

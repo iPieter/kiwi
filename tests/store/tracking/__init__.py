@@ -1,8 +1,8 @@
 import json
 
-from mlflow.entities import RunTag
-from mlflow.models import Model
-from mlflow.utils.mlflow_tags import MLFLOW_LOGGED_MODELS
+from kiwi.entities import RunTag
+from kiwi.models import Model
+from kiwi.utils.mlflow_tags import MLFLOW_LOGGED_MODELS
 
 
 class AbstractStoreTest(object):

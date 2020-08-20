@@ -8,100 +8,100 @@ import attrdict
 import mock
 import pytest
 
-import mlflow
-from mlflow import tracking
-from mlflow.entities import RunStatus, LifecycleStage, Metric, Param, RunTag, ViewType
-from mlflow.exceptions import MlflowException
-from mlflow.store.tracking.file_store import FileStore
-from mlflow.protos.databricks_pb2 import ErrorCode, INVALID_PARAMETER_VALUE
-from mlflow.tracking.client import MlflowClient
-from mlflow.tracking.fluent import start_run
-from mlflow.utils.file_utils import local_file_uri_to_path
-from mlflow.utils.mlflow_tags import MLFLOW_PARENT_RUN_ID, MLFLOW_USER, MLFLOW_SOURCE_NAME, \
+import kiwi
+from kiwi import tracking
+from kiwi.entities import RunStatus, LifecycleStage, Metric, Param, RunTag, ViewType
+from kiwi.exceptions import MlflowException
+from kiwi.store.tracking.file_store import FileStore
+from kiwi.protos.databricks_pb2 import ErrorCode, INVALID_PARAMETER_VALUE
+from kiwi.tracking.client import MlflowClient
+from kiwi.tracking.fluent import start_run
+from kiwi.utils.file_utils import local_file_uri_to_path
+from kiwi.utils.mlflow_tags import MLFLOW_PARENT_RUN_ID, MLFLOW_USER, MLFLOW_SOURCE_NAME, \
     MLFLOW_SOURCE_TYPE
-from mlflow.tracking.fluent import _RUN_ID_ENV_VAR
+from kiwi.tracking.fluent import _RUN_ID_ENV_VAR
 
 
 def test_create_experiment():
     with pytest.raises(TypeError):
-        mlflow.create_experiment()  # pylint: disable=no-value-for-parameter
+        kiwi.create_experiment()  # pylint: disable=no-value-for-parameter
 
     with pytest.raises(Exception):
-        mlflow.create_experiment(None)
+        kiwi.create_experiment(None)
 
     with pytest.raises(Exception):
-        mlflow.create_experiment("")
+        kiwi.create_experiment("")
 
-    exp_id = mlflow.create_experiment(
+    exp_id = kiwi.create_experiment(
         "Some random experiment name %d" % random.randint(1, 1e6))
     assert exp_id is not None
 
 
 def test_create_experiment_with_duplicate_name():
     name = "popular_name"
-    exp_id = mlflow.create_experiment(name)
+    exp_id = kiwi.create_experiment(name)
 
     with pytest.raises(MlflowException):
-        mlflow.create_experiment(name)
+        kiwi.create_experiment(name)
 
     tracking.MlflowClient().delete_experiment(exp_id)
     with pytest.raises(MlflowException):
-        mlflow.create_experiment(name)
+        kiwi.create_experiment(name)
 
 
 def test_create_experiments_with_bad_names():
     # None for name
     with pytest.raises(MlflowException) as e:
-        mlflow.create_experiment(None)
+        kiwi.create_experiment(None)
         assert e.message.contains("Invalid experiment name: 'None'")
 
     # empty string name
     with pytest.raises(MlflowException) as e:
-        mlflow.create_experiment("")
+        kiwi.create_experiment("")
         assert e.message.contains("Invalid experiment name: ''")
 
 
 @pytest.mark.parametrize("name", [123, 0, -1.2, [], ["A"], {1: 2}])
 def test_create_experiments_with_bad_name_types(name):
     with pytest.raises(MlflowException) as e:
-        mlflow.create_experiment(name)
+        kiwi.create_experiment(name)
         assert e.message.contains("Invalid experiment name: %s. Expects a string." % name)
 
 
 @pytest.mark.usefixtures("reset_active_experiment")
 def test_set_experiment():
     with pytest.raises(TypeError):
-        mlflow.set_experiment()  # pylint: disable=no-value-for-parameter
+        kiwi.set_experiment()  # pylint: disable=no-value-for-parameter
 
     with pytest.raises(Exception):
-        mlflow.set_experiment(None)
+        kiwi.set_experiment(None)
 
     with pytest.raises(Exception):
-        mlflow.set_experiment("")
+        kiwi.set_experiment("")
 
     name = "random_exp"
-    exp_id = mlflow.create_experiment(name)
-    mlflow.set_experiment(name)
+    exp_id = kiwi.create_experiment(name)
+    kiwi.set_experiment(name)
     with start_run() as run:
         assert run.info.experiment_id == exp_id
 
     another_name = "another_experiment"
-    mlflow.set_experiment(another_name)
-    exp_id2 = mlflow.tracking.MlflowClient().get_experiment_by_name(another_name)
+    kiwi.set_experiment(another_name)
+    exp_id2 = kiwi.tracking.MlflowClient().get_experiment_by_name(another_name)
     with start_run() as another_run:
         assert another_run.info.experiment_id == exp_id2.experiment_id
 
 
 def test_set_experiment_with_deleted_experiment_name():
     name = "dead_exp"
-    mlflow.set_experiment(name)
+    kiwi.set_experiment(name)
     with start_run() as run:
         exp_id = run.info.experiment_id
 
     tracking.MlflowClient().delete_experiment(exp_id)
 
     with pytest.raises(MlflowException):
-        mlflow.set_experiment(name)
+        kiwi.set_experiment(name)
 
 
 def test_list_experiments():
@@ -109,7 +109,7 @@ def test_list_experiments():
         result = set([(exp.experiment_id, exp.lifecycle_stage)
                       for exp in client.list_experiments(view_type=view_type_arg)])
         assert result == set([(exp_id, stage) for exp_id, stage in ids_to_lifecycle_stage.items()])
-    experiment_id = mlflow.create_experiment("exp_1")
+    experiment_id = kiwi.create_experiment("exp_1")
     assert experiment_id == '1'
     client = tracking.MlflowClient()
     _assert_exps({'0': LifecycleStage.ACTIVE, '1': LifecycleStage.ACTIVE}, ViewType.ACTIVE_ONLY)
@@ -129,7 +129,7 @@ def test_set_experiment_with_zero_id(reset_mock):
                    lifecycle_stage=LifecycleStage.ACTIVE)))
     reset_mock(MlflowClient, "create_experiment", mock.Mock())
 
-    mlflow.set_experiment("my_exp")
+    kiwi.set_experiment("my_exp")
 
     MlflowClient.get_experiment_by_name.assert_called_once()
     MlflowClient.create_experiment.assert_not_called()
@@ -159,7 +159,7 @@ def test_start_and_end_run():
     # Use the start_run() and end_run() APIs without a `with` block, verify they work.
 
     with start_run() as active_run:
-        mlflow.log_metric("name_1", 25)
+        kiwi.log_metric("name_1", 25)
     finished_run = tracking.MlflowClient().get_run(active_run.info.run_id)
     # Validate metrics
     assert len(finished_run.data.metrics) == 1
@@ -167,12 +167,12 @@ def test_start_and_end_run():
 
 
 def test_metric_timestamp():
-    with mlflow.start_run() as active_run:
-        mlflow.log_metric("name_1", 25)
-        mlflow.log_metric("name_1", 30)
+    with kiwi.start_run() as active_run:
+        kiwi.log_metric("name_1", 25)
+        kiwi.log_metric("name_1", 30)
         run_id = active_run.info.run_uuid
     # Check that metric timestamps are between run start and finish
-    client = mlflow.tracking.MlflowClient()
+    client = kiwi.tracking.MlflowClient()
     history = client.get_metric_history(run_id, "name_1")
     finished_run = client.get_run(run_id)
     assert len(history) == 2
@@ -198,8 +198,8 @@ def test_log_batch():
 
     with start_run() as active_run:
         run_id = active_run.info.run_id
-        mlflow.tracking.MlflowClient().log_batch(run_id=run_id, metrics=metrics, params=params,
-                                                 tags=tags)
+        kiwi.tracking.MlflowClient().log_batch(run_id=run_id, metrics=metrics, params=params,
+                                               tags=tags)
     client = tracking.MlflowClient()
     finished_run = client.get_run(run_id)
     # Validate metrics
@@ -240,11 +240,11 @@ def test_log_metric():
     with start_run() as active_run, mock.patch("time.time") as time_mock:
         time_mock.side_effect = [123 for _ in range(100)]
         run_id = active_run.info.run_id
-        mlflow.log_metric("name_1", 25)
-        mlflow.log_metric("name_2", -3)
-        mlflow.log_metric("name_1", 30, 5)
-        mlflow.log_metric("name_1", 40, -2)
-        mlflow.log_metric("nested/nested/name", 40)
+        kiwi.log_metric("name_1", 25)
+        kiwi.log_metric("name_2", -3)
+        kiwi.log_metric("name_1", 30, 5)
+        kiwi.log_metric("name_1", 40, -2)
+        kiwi.log_metric("nested/nested/name", 40)
     finished_run = tracking.MlflowClient().get_run(run_id)
     # Validate metrics
     assert len(finished_run.data.metrics) == 3
@@ -267,14 +267,14 @@ def test_log_metric():
 def test_log_metrics_uses_millisecond_timestamp_resolution_fluent():
     with start_run() as active_run, mock.patch("time.time") as time_mock:
         time_mock.side_effect = lambda: 123
-        mlflow.log_metrics({
+        kiwi.log_metrics({
             "name_1": 25,
             "name_2": -3,
         })
-        mlflow.log_metrics({
+        kiwi.log_metrics({
             "name_1": 30,
         })
-        mlflow.log_metrics({
+        kiwi.log_metrics({
             "name_1": 40,
         })
         run_id = active_run.info.run_id
@@ -320,7 +320,7 @@ def test_log_metrics_uses_common_timestamp_and_step_per_invocation(step_kwarg):
     expected_metrics = {"name_1": 30, "name_2": -3, "nested/nested/name": 40}
     with start_run() as active_run:
         run_id = active_run.info.run_id
-        mlflow.log_metrics(expected_metrics, step=step_kwarg)
+        kiwi.log_metrics(expected_metrics, step=step_kwarg)
     finished_run = tracking.MlflowClient().get_run(run_id)
     # Validate metric key/values match what we expect, and that all metrics have the same timestamp
     assert len(finished_run.data.metrics) == len(expected_metrics)
@@ -345,7 +345,7 @@ def test_set_tags():
     approx_expected_tags = set([MLFLOW_USER, MLFLOW_SOURCE_NAME, MLFLOW_SOURCE_TYPE])
     with start_run() as active_run:
         run_id = active_run.info.run_id
-        mlflow.set_tags(exact_expected_tags)
+        kiwi.set_tags(exact_expected_tags)
     finished_run = tracking.MlflowClient().get_run(run_id)
     # Validate tags
     assert len(finished_run.data.tags) == len(exact_expected_tags) + len(approx_expected_tags)
@@ -360,7 +360,7 @@ def test_log_metric_validation():
     with start_run() as active_run:
         run_id = active_run.info.run_id
         with pytest.raises(MlflowException) as e:
-            mlflow.log_metric("name_1", "apple")
+            kiwi.log_metric("name_1", "apple")
     assert e.value.error_code == ErrorCode.Name(INVALID_PARAMETER_VALUE)
     finished_run = tracking.MlflowClient().get_run(run_id)
     assert len(finished_run.data.metrics) == 0
@@ -369,9 +369,9 @@ def test_log_metric_validation():
 def test_log_param():
     with start_run() as active_run:
         run_id = active_run.info.run_id
-        mlflow.log_param("name_1", "a")
-        mlflow.log_param("name_2", "b")
-        mlflow.log_param("nested/nested/name", 5)
+        kiwi.log_param("name_1", "a")
+        kiwi.log_param("name_2", "b")
+        kiwi.log_param("nested/nested/name", 5)
     finished_run = tracking.MlflowClient().get_run(run_id)
     # Validate params
     assert finished_run.data.params == {"name_1": "a", "name_2": "b", "nested/nested/name": "5"}
@@ -381,7 +381,7 @@ def test_log_params():
     expected_params = {"name_1": "c", "name_2": "b", "nested/nested/name": 5}
     with start_run() as active_run:
         run_id = active_run.info.run_id
-        mlflow.log_params(expected_params)
+        kiwi.log_params(expected_params)
     finished_run = tracking.MlflowClient().get_run(run_id)
     # Validate params
     assert finished_run.data.params == {"name_1": "c", "name_2": "b", "nested/nested/name": "5"}
@@ -418,9 +418,9 @@ def test_log_artifact_with_dirs(tmpdir):
     file1.write("something")
     sub_dir = art_dir.mkdir("child")
     with start_run():
-        artifact_uri = mlflow.get_artifact_uri()
+        artifact_uri = kiwi.get_artifact_uri()
         run_artifact_dir = local_file_uri_to_path(artifact_uri)
-        mlflow.log_artifact(str(art_dir))
+        kiwi.log_artifact(str(art_dir))
         base = os.path.basename(str(art_dir))
         assert os.listdir(run_artifact_dir) == [base]
         assert set(os.listdir(os.path.join(run_artifact_dir, base))) == \
@@ -430,17 +430,17 @@ def test_log_artifact_with_dirs(tmpdir):
     # Test log artifact with directory and specified parent folder
     art_dir = tmpdir.mkdir("dir")
     with start_run():
-        artifact_uri = mlflow.get_artifact_uri()
+        artifact_uri = kiwi.get_artifact_uri()
         run_artifact_dir = local_file_uri_to_path(artifact_uri)
-        mlflow.log_artifact(str(art_dir), "some_parent")
+        kiwi.log_artifact(str(art_dir), "some_parent")
         assert os.listdir(run_artifact_dir) == [os.path.basename("some_parent")]
         assert os.listdir(os.path.join(run_artifact_dir, "some_parent")) == \
             [os.path.basename(str(art_dir))]
     sub_dir = art_dir.mkdir("another_dir")
     with start_run():
-        artifact_uri = mlflow.get_artifact_uri()
+        artifact_uri = kiwi.get_artifact_uri()
         run_artifact_dir = local_file_uri_to_path(artifact_uri)
-        mlflow.log_artifact(str(art_dir), "parent/and_child")
+        kiwi.log_artifact(str(art_dir), "parent/and_child")
         assert os.listdir(os.path.join(run_artifact_dir, "parent", "and_child")) == \
             [os.path.basename(str(art_dir))]
         assert os.listdir(os.path.join(run_artifact_dir,
@@ -462,9 +462,9 @@ def test_log_artifact():
     artifact_parent_dirs = ["some_parent_dir", None]
     for parent_dir in artifact_parent_dirs:
         with start_run():
-            artifact_uri = mlflow.get_artifact_uri()
+            artifact_uri = kiwi.get_artifact_uri()
             run_artifact_dir = local_file_uri_to_path(artifact_uri)
-            mlflow.log_artifact(path0, parent_dir)
+            kiwi.log_artifact(path0, parent_dir)
         expected_dir = os.path.join(run_artifact_dir, parent_dir) \
             if parent_dir is not None else run_artifact_dir
         assert os.listdir(expected_dir) == [os.path.basename(path0)]
@@ -473,10 +473,10 @@ def test_log_artifact():
     # Log multiple artifacts, verify they exist in the directory returned by get_artifact_uri
     for parent_dir in artifact_parent_dirs:
         with start_run():
-            artifact_uri = mlflow.get_artifact_uri()
+            artifact_uri = kiwi.get_artifact_uri()
             run_artifact_dir = local_file_uri_to_path(artifact_uri)
 
-            mlflow.log_artifacts(artifact_src_dir, parent_dir)
+            kiwi.log_artifacts(artifact_src_dir, parent_dir)
         # Check that the logged artifacts match
         expected_artifact_output_dir = os.path.join(run_artifact_dir, parent_dir) \
             if parent_dir is not None else run_artifact_dir
@@ -490,27 +490,27 @@ def test_log_artifact():
 def test_with_startrun():
     run_id = None
     t0 = int(time.time() * 1000)
-    with mlflow.start_run() as active_run:
-        assert mlflow.active_run() == active_run
+    with kiwi.start_run() as active_run:
+        assert kiwi.active_run() == active_run
         run_id = active_run.info.run_id
     t1 = int(time.time() * 1000)
-    run_info = mlflow.tracking._get_store().get_run(run_id).info
+    run_info = kiwi.tracking._get_store().get_run(run_id).info
     assert run_info.status == "FINISHED"
     assert t0 <= run_info.end_time and run_info.end_time <= t1
-    assert mlflow.active_run() is None
+    assert kiwi.active_run() is None
 
 
 def test_parent_create_run():
-    with mlflow.start_run() as parent_run:
+    with kiwi.start_run() as parent_run:
         parent_run_id = parent_run.info.run_id
     os.environ[_RUN_ID_ENV_VAR] = parent_run_id
-    with mlflow.start_run() as parent_run:
+    with kiwi.start_run() as parent_run:
         assert parent_run.info.run_id == parent_run_id
         with pytest.raises(Exception, match='To start a nested run'):
-            mlflow.start_run()
-        with mlflow.start_run(nested=True) as child_run:
+            kiwi.start_run()
+        with kiwi.start_run(nested=True) as child_run:
             assert child_run.info.run_id != parent_run_id
-            with mlflow.start_run(nested=True) as grand_child_run:
+            with kiwi.start_run(nested=True) as grand_child_run:
                 pass
 
     def verify_has_parent_id_tag(child_id, expected_parent_id):
@@ -519,43 +519,43 @@ def test_parent_create_run():
 
     verify_has_parent_id_tag(child_run.info.run_id, parent_run.info.run_id)
     verify_has_parent_id_tag(grand_child_run.info.run_id, child_run.info.run_id)
-    assert mlflow.active_run() is None
+    assert kiwi.active_run() is None
 
 
 def test_start_deleted_run():
     run_id = None
-    with mlflow.start_run() as active_run:
+    with kiwi.start_run() as active_run:
         run_id = active_run.info.run_id
     tracking.MlflowClient().delete_run(run_id)
     with pytest.raises(MlflowException, matches='because it is in the deleted state.'):
-        with mlflow.start_run(run_id=run_id):
+        with kiwi.start_run(run_id=run_id):
             pass
-    assert mlflow.active_run() is None
+    assert kiwi.active_run() is None
 
 
 @pytest.mark.usefixtures("reset_active_experiment")
 def test_start_run_exp_id_0():
-    mlflow.set_experiment("some-experiment")
+    kiwi.set_experiment("some-experiment")
     # Create a run and verify that the current active experiment is the one we just set
-    with mlflow.start_run() as active_run:
+    with kiwi.start_run() as active_run:
         exp_id = active_run.info.experiment_id
         assert exp_id != FileStore.DEFAULT_EXPERIMENT_ID
         assert MlflowClient().get_experiment(exp_id).name == "some-experiment"
     # Set experiment ID to 0 when creating a run, verify that the specified experiment ID is honored
-    with mlflow.start_run(experiment_id=0) as active_run:
+    with kiwi.start_run(experiment_id=0) as active_run:
         assert active_run.info.experiment_id == FileStore.DEFAULT_EXPERIMENT_ID
 
 
 def test_get_artifact_uri_with_artifact_path_unspecified_returns_artifact_root_dir():
-    with mlflow.start_run() as active_run:
-        assert mlflow.get_artifact_uri(artifact_path=None) == active_run.info.artifact_uri
+    with kiwi.start_run() as active_run:
+        assert kiwi.get_artifact_uri(artifact_path=None) == active_run.info.artifact_uri
 
 
 def test_get_artifact_uri_uses_currently_active_run_id():
     artifact_path = "artifact"
-    with mlflow.start_run() as active_run:
-        assert mlflow.get_artifact_uri(artifact_path=artifact_path) == \
-            tracking.artifact_utils.get_artifact_uri(
+    with kiwi.start_run() as active_run:
+        assert kiwi.get_artifact_uri(artifact_path=artifact_path) == \
+               tracking.artifact_utils.get_artifact_uri(
             run_id=active_run.info.run_id, artifact_path=artifact_path)
 
 
@@ -581,11 +581,11 @@ def test_get_artifact_uri_appends_to_uri_path_component_correctly(
         artifact_location, expected_uri_format):
     client = MlflowClient()
     client.create_experiment("get-artifact-uri-test", artifact_location=artifact_location)
-    mlflow.set_experiment("get-artifact-uri-test")
-    with mlflow.start_run():
-        run_id = mlflow.active_run().info.run_id
+    kiwi.set_experiment("get-artifact-uri-test")
+    with kiwi.start_run():
+        run_id = kiwi.active_run().info.run_id
         for artifact_path in ["path/to/artifact", "/artifact/path", "arty.txt"]:
-            artifact_uri = mlflow.get_artifact_uri(artifact_path)
+            artifact_uri = kiwi.get_artifact_uri(artifact_path)
             assert artifact_uri == tracking.artifact_utils.get_artifact_uri(run_id, artifact_path)
             assert artifact_uri == expected_uri_format.format(
                 run_id=run_id, path=artifact_path.lstrip("/"))
@@ -593,21 +593,21 @@ def test_get_artifact_uri_appends_to_uri_path_component_correctly(
 
 @pytest.mark.usefixtures("reset_active_experiment")
 def test_search_runs():
-    mlflow.set_experiment("exp-for-search")
+    kiwi.set_experiment("exp-for-search")
     # Create a run and verify that the current active experiment is the one we just set
     logged_runs = {}
-    with mlflow.start_run() as active_run:
+    with kiwi.start_run() as active_run:
         logged_runs["first"] = active_run.info.run_id
-        mlflow.log_metric("m1", 0.001)
-        mlflow.log_metric("m2", 0.002)
-        mlflow.log_metric("m1", 0.002)
-        mlflow.log_param("p1", "a")
-        mlflow.set_tag("t1", "first-tag-val")
-    with mlflow.start_run() as active_run:
+        kiwi.log_metric("m1", 0.001)
+        kiwi.log_metric("m2", 0.002)
+        kiwi.log_metric("m1", 0.002)
+        kiwi.log_param("p1", "a")
+        kiwi.set_tag("t1", "first-tag-val")
+    with kiwi.start_run() as active_run:
         logged_runs["second"] = active_run.info.run_id
-        mlflow.log_metric("m1", 0.008)
-        mlflow.log_param("p2", "aa")
-        mlflow.set_tag("t2", "second-tag-val")
+        kiwi.log_metric("m1", 0.008)
+        kiwi.log_param("p2", "aa")
+        kiwi.set_tag("t2", "second-tag-val")
 
     def verify_runs(runs, expected_set):
         assert set([r.info.run_id for r in runs]) == set([logged_runs[r] for r in expected_set])
@@ -663,11 +663,11 @@ def test_search_runs():
 
 @pytest.mark.usefixtures("reset_active_experiment")
 def test_search_runs_multiple_experiments():
-    experiment_ids = [mlflow.create_experiment("exp__{}".format(exp_id)) for exp_id in range(1, 4)]
+    experiment_ids = [kiwi.create_experiment("exp__{}".format(exp_id)) for exp_id in range(1, 4)]
     for eid in experiment_ids:
-        with mlflow.start_run(experiment_id=eid):
-            mlflow.log_metric("m0", 1)
-            mlflow.log_metric("m_{}".format(eid), 2)
+        with kiwi.start_run(experiment_id=eid):
+            kiwi.log_metric("m0", 1)
+            kiwi.log_metric("m_{}".format(eid), 2)
 
     assert len(MlflowClient().search_runs(experiment_ids, "metrics.m0 > 0", ViewType.ALL)) == 3
 

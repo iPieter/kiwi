@@ -3,7 +3,7 @@ import random
 import spacy
 from spacy.util import minibatch, compounding
 
-import mlflow.spacy
+import kiwi.spacy
 
 # training data
 TRAIN_DATA = [
@@ -28,7 +28,7 @@ if __name__ == "__main__":
         'n_iter':100,
         'drop': 0.5
     }
-    mlflow.log_params(params)
+    kiwi.log_params(params)
 
     nlp.begin_training()
     for itn in range(params['n_iter']):
@@ -45,18 +45,18 @@ if __name__ == "__main__":
                 losses=losses,
             )
         print("Losses", losses)
-        mlflow.log_metrics(losses)
+        kiwi.log_metrics(losses)
 
     # Log the spaCy model using mlflow
-    mlflow.spacy.log_model(spacy_model=nlp, artifact_path='model')
+    kiwi.spacy.log_model(spacy_model=nlp, artifact_path='model')
     model_uri = "runs:/{run_id}/{artifact_path}".format(
-        run_id=mlflow.active_run().info.run_id,
+        run_id=kiwi.active_run().info.run_id,
         artifact_path='model')
 
-    print("Model saved in run %s" % mlflow.active_run().info.run_uuid)
+    print("Model saved in run %s" % kiwi.active_run().info.run_uuid)
 
     # Load the model using mlflow and use it to predict data
-    nlp2 = mlflow.spacy.load_model(model_uri=model_uri)
+    nlp2 = kiwi.spacy.load_model(model_uri=model_uri)
     for text, _ in TRAIN_DATA:
         doc = nlp2(text)
         print("Entities", [(ent.text, ent.label_) for ent in doc.ents])

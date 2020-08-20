@@ -1,13 +1,13 @@
 # in case this is run outside of conda environment with python2
-import mlflow
+import kiwi
 import argparse
 import sys
-from mlflow import pyfunc
+from kiwi import pyfunc
 import pandas as pd
 import shutil
 import tempfile
 import tensorflow as tf
-import mlflow.tensorflow
+import kiwi.tensorflow
 
 TRAIN_URL = "http://download.tensorflow.org/data/iris_training.csv"
 TEST_URL = "http://download.tensorflow.org/data/iris_test.csv"
@@ -63,7 +63,7 @@ def eval_input_fn(features, labels, batch_size):
     return dataset
 
 # Enable auto-logging to MLflow to capture TensorBoard metrics.
-mlflow.tensorflow.autolog()
+kiwi.tensorflow.autolog()
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--batch_size', default=100, type=int, help='batch size')
@@ -71,7 +71,7 @@ parser.add_argument('--train_steps', default=1000, type=int,
                     help='number of training steps')
 
 def main(argv):
-    with mlflow.start_run():
+    with kiwi.start_run():
         args = parser.parse_args(argv[1:])
 
         # Fetch the data
@@ -148,7 +148,7 @@ def main(argv):
             # Since the model was automatically logged as an artifact (more specifically
             # a MLflow Model), we don't need to use saved_estimator_path to load back the model.
             # MLflow takes care of it!
-            pyfunc_model = pyfunc.load_model(mlflow.get_artifact_uri('model'))
+            pyfunc_model = pyfunc.load_model(kiwi.get_artifact_uri('model'))
 
             predict_data = [[5.1, 3.3, 1.7, 0.5], [5.9, 3.0, 4.2, 1.5], [6.9, 3.1, 5.4, 2.1]]
             df = pd.DataFrame(data=predict_data, columns=["SepalLength", "SepalWidth",

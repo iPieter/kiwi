@@ -13,13 +13,13 @@ import uuid
 import mock
 import pytest
 
-from mlflow.entities import Metric, Param, RunTag, ViewType, LifecycleStage, RunStatus, RunData,\
+from kiwi.entities import Metric, Param, RunTag, ViewType, LifecycleStage, RunStatus, RunData,\
     ExperimentTag
-from mlflow.exceptions import MlflowException, MissingConfigException
-from mlflow.store.tracking import SEARCH_MAX_RESULTS_DEFAULT
-from mlflow.store.tracking.file_store import FileStore
-from mlflow.utils.file_utils import write_yaml, read_yaml, path_to_local_file_uri, TempDir
-from mlflow.protos.databricks_pb2 import (
+from kiwi.exceptions import MlflowException, MissingConfigException
+from kiwi.store.tracking import SEARCH_MAX_RESULTS_DEFAULT
+from kiwi.store.tracking.file_store import FileStore
+from kiwi.utils.file_utils import write_yaml, read_yaml, path_to_local_file_uri, TempDir
+from kiwi.protos.databricks_pb2 import (
     ErrorCode, RESOURCE_DOES_NOT_EXIST, INTERNAL_ERROR, INVALID_PARAMETER_VALUE
 )
 

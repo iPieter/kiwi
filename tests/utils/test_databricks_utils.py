@@ -1,10 +1,10 @@
 import mock
 import pytest
 
-from mlflow.utils import databricks_utils
+from kiwi.utils import databricks_utils
 from databricks_cli.configure.provider import DatabricksConfig
 
-from mlflow.utils.uri import construct_db_uri_from_profile
+from kiwi.utils.uri import construct_db_uri_from_profile
 
 
 def test_no_throw():

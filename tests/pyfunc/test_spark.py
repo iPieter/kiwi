@@ -8,15 +8,15 @@ import pyspark
 from py4j.protocol import Py4JJavaError
 from pyspark.sql.types import ArrayType, DoubleType, LongType, StringType, FloatType, IntegerType
 
-import mlflow
-import mlflow.pyfunc
-import mlflow.sklearn
-from mlflow.models import ModelSignature
-from mlflow.pyfunc import spark_udf, PythonModel, PyFuncModel
-from mlflow.pyfunc.spark_model_cache import SparkModelCache
+import kiwi
+import kiwi.pyfunc
+import kiwi.sklearn
+from kiwi.models import ModelSignature
+from kiwi.pyfunc import spark_udf, PythonModel, PyFuncModel
+from kiwi.pyfunc.spark_model_cache import SparkModelCache
 
 import tests
-from mlflow.types import Schema, ColSpec
+from kiwi.types import Schema, ColSpec
 
 prediction = [int(1), int(2), "class1", float(0.1), 0.2]
 types = [np.int32, np.int, np.str, np.float32, np.double]
@@ -76,12 +76,12 @@ def model_path(tmpdir):
 
 @pytest.mark.large
 def test_spark_udf(spark, model_path):
-    mlflow.pyfunc.save_model(
+    kiwi.pyfunc.save_model(
         path=model_path,
         loader_module=__name__,
         code_path=[os.path.dirname(tests.__file__)],
     )
-    reloaded_pyfunc_model = mlflow.pyfunc.load_pyfunc(model_path)
+    reloaded_pyfunc_model = kiwi.pyfunc.load_pyfunc(model_path)
 
     pandas_df = pd.DataFrame(data=np.ones((10, 10)), columns=[str(i) for i in range(10)])
     spark_df = spark.createDataFrame(pandas_df)
@@ -130,10 +130,10 @@ def test_spark_udf_autofills_column_names_with_schema(spark):
         ]),
         outputs=Schema([ColSpec("integer")])
     )
-    with mlflow.start_run() as run:
-        mlflow.pyfunc.log_model("model", python_model=TestModel(), signature=signature)
-        udf = mlflow.pyfunc.spark_udf(spark, "runs:/{}/model".format(run.info.run_id),
-                                      result_type=ArrayType(StringType()))
+    with kiwi.start_run() as run:
+        kiwi.pyfunc.log_model("model", python_model=TestModel(), signature=signature)
+        udf = kiwi.pyfunc.spark_udf(spark, "runs:/{}/model".format(run.info.run_id),
+                                    result_type=ArrayType(StringType()))
         data = spark.createDataFrame(pd.DataFrame(
             columns=["a", "b", "c", "d"],
             data={
@@ -154,7 +154,7 @@ def test_spark_udf_autofills_column_names_with_schema(spark):
 
 @pytest.mark.large
 def test_model_cache(spark, model_path):
-    mlflow.pyfunc.save_model(
+    kiwi.pyfunc.save_model(
         path=model_path,
         loader_module=__name__,
         code_path=[os.path.dirname(tests.__file__)],

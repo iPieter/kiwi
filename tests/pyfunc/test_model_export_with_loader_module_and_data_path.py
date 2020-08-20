@@ -10,19 +10,19 @@ import sklearn.datasets
 import sklearn.linear_model
 import sklearn.neighbors
 
-import mlflow
-import mlflow.pyfunc
-from mlflow.pyfunc import PyFuncModel
-import mlflow.pyfunc.model
-import mlflow.sklearn
-from mlflow.exceptions import MlflowException
-from mlflow.models import Model, infer_signature, ModelSignature
-from mlflow.models.utils import _read_example
-from mlflow.tracking.artifact_utils import _download_artifact_from_uri
-from mlflow.types import Schema, ColSpec
-from mlflow.utils.environment import _mlflow_conda_env
-from mlflow.utils.file_utils import TempDir
-from mlflow.utils.model_utils import _get_flavor_configuration
+import kiwi
+import kiwi.pyfunc
+from kiwi.pyfunc import PyFuncModel
+import kiwi.pyfunc.model
+import kiwi.sklearn
+from kiwi.exceptions import MlflowException
+from kiwi.models import Model, infer_signature, ModelSignature
+from kiwi.models.utils import _read_example
+from kiwi.tracking.artifact_utils import _download_artifact_from_uri
+from kiwi.types import Schema, ColSpec
+from kiwi.utils.environment import _mlflow_conda_env
+from kiwi.utils.file_utils import TempDir
+from kiwi.utils.model_utils import _get_flavor_configuration
 
 
 def _load_pyfunc(path):
@@ -39,7 +39,7 @@ def pyfunc_custom_env_file(tmpdir):
     _mlflow_conda_env(
         conda_env,
         additional_conda_deps=["scikit-learn", "pytest", "cloudpickle"],
-        additional_pip_deps=["-e " + os.path.dirname(mlflow.__path__[0])])
+        additional_pip_deps=["-e " + os.path.dirname(kiwi.__path__[0])])
     return conda_env
 
 
@@ -47,7 +47,7 @@ def pyfunc_custom_env_file(tmpdir):
 def pyfunc_custom_env_dict():
     return _mlflow_conda_env(
         additional_conda_deps=["scikit-learn", "pytest", "cloudpickle"],
-        additional_pip_deps=["-e " + os.path.dirname(mlflow.__path__[0])])
+        additional_pip_deps=["-e " + os.path.dirname(kiwi.__path__[0])])
 
 
 @pytest.fixture(scope="module")
@@ -78,17 +78,17 @@ def test_model_save_load(sklearn_knn_model, iris_data, tmpdir, model_path):
         pickle.dump(sklearn_knn_model, f)
 
     model_config = Model(run_id="test", artifact_path="testtest")
-    mlflow.pyfunc.save_model(path=model_path,
-                             data_path=sk_model_path,
-                             loader_module=os.path.basename(__file__)[:-3],
-                             code_path=[__file__],
-                             mlflow_model=model_config)
+    kiwi.pyfunc.save_model(path=model_path,
+                           data_path=sk_model_path,
+                           loader_module=os.path.basename(__file__)[:-3],
+                           code_path=[__file__],
+                           mlflow_model=model_config)
 
     reloaded_model_config = Model.load(os.path.join(model_path, "MLmodel"))
     assert model_config.__dict__ == reloaded_model_config.__dict__
-    assert mlflow.pyfunc.FLAVOR_NAME in reloaded_model_config.flavors
-    assert mlflow.pyfunc.PY_VERSION in reloaded_model_config.flavors[mlflow.pyfunc.FLAVOR_NAME]
-    reloaded_model = mlflow.pyfunc.load_pyfunc(model_path)
+    assert kiwi.pyfunc.FLAVOR_NAME in reloaded_model_config.flavors
+    assert kiwi.pyfunc.PY_VERSION in reloaded_model_config.flavors[kiwi.pyfunc.FLAVOR_NAME]
+    reloaded_model = kiwi.pyfunc.load_pyfunc(model_path)
     np.testing.assert_array_equal(
         sklearn_knn_model.predict(iris_data[0]), reloaded_model.predict(iris_data[0]))
 
@@ -104,12 +104,12 @@ def test_signature_and_examples_are_saved_correctly(sklearn_knn_model, iris_data
                 with open(tmp.path("skmodel"), "wb") as f:
                     pickle.dump(sklearn_knn_model, f)
                 path = tmp.path("model")
-                mlflow.pyfunc.save_model(path=path,
-                                         data_path=tmp.path("skmodel"),
-                                         loader_module=os.path.basename(__file__)[:-3],
-                                         code_path=[__file__],
-                                         signature=signature,
-                                         input_example=example)
+                kiwi.pyfunc.save_model(path=path,
+                                       data_path=tmp.path("skmodel"),
+                                       loader_module=os.path.basename(__file__)[:-3],
+                                       code_path=[__file__],
+                                       signature=signature,
+                                       input_example=example)
                 mlflow_model = Model.load(path)
                 assert signature == mlflow_model.signature
                 if example is None:
@@ -272,18 +272,18 @@ def test_model_log_load(sklearn_knn_model, iris_data, tmpdir):
         pickle.dump(sklearn_knn_model, f)
 
     pyfunc_artifact_path = "pyfunc_model"
-    with mlflow.start_run():
-        mlflow.pyfunc.log_model(artifact_path=pyfunc_artifact_path,
-                                data_path=sk_model_path,
-                                loader_module=os.path.basename(__file__)[:-3],
-                                code_path=[__file__])
+    with kiwi.start_run():
+        kiwi.pyfunc.log_model(artifact_path=pyfunc_artifact_path,
+                              data_path=sk_model_path,
+                              loader_module=os.path.basename(__file__)[:-3],
+                              code_path=[__file__])
         pyfunc_model_path = _download_artifact_from_uri("runs:/{run_id}/{artifact_path}".format(
-            run_id=mlflow.active_run().info.run_id, artifact_path=pyfunc_artifact_path))
+            run_id=kiwi.active_run().info.run_id, artifact_path=pyfunc_artifact_path))
 
     model_config = Model.load(os.path.join(pyfunc_model_path, "MLmodel"))
-    assert mlflow.pyfunc.FLAVOR_NAME in model_config.flavors
-    assert mlflow.pyfunc.PY_VERSION in model_config.flavors[mlflow.pyfunc.FLAVOR_NAME]
-    reloaded_model = mlflow.pyfunc.load_pyfunc(pyfunc_model_path)
+    assert kiwi.pyfunc.FLAVOR_NAME in model_config.flavors
+    assert kiwi.pyfunc.PY_VERSION in model_config.flavors[kiwi.pyfunc.FLAVOR_NAME]
+    reloaded_model = kiwi.pyfunc.load_pyfunc(pyfunc_model_path)
     assert model_config.to_yaml() == reloaded_model.metadata.to_yaml()
     np.testing.assert_array_equal(
         sklearn_knn_model.predict(iris_data[0]), reloaded_model.predict(iris_data[0]))
@@ -296,36 +296,36 @@ def test_model_log_load_no_active_run(sklearn_knn_model, iris_data, tmpdir):
         pickle.dump(sklearn_knn_model, f)
 
     pyfunc_artifact_path = "pyfunc_model"
-    assert mlflow.active_run() is None
-    mlflow.pyfunc.log_model(artifact_path=pyfunc_artifact_path,
-                            data_path=sk_model_path,
-                            loader_module=os.path.basename(__file__)[:-3],
-                            code_path=[__file__])
+    assert kiwi.active_run() is None
+    kiwi.pyfunc.log_model(artifact_path=pyfunc_artifact_path,
+                          data_path=sk_model_path,
+                          loader_module=os.path.basename(__file__)[:-3],
+                          code_path=[__file__])
     pyfunc_model_path = _download_artifact_from_uri("runs:/{run_id}/{artifact_path}".format(
-        run_id=mlflow.active_run().info.run_id, artifact_path=pyfunc_artifact_path))
+        run_id=kiwi.active_run().info.run_id, artifact_path=pyfunc_artifact_path))
 
     model_config = Model.load(os.path.join(pyfunc_model_path, "MLmodel"))
-    assert mlflow.pyfunc.FLAVOR_NAME in model_config.flavors
-    assert mlflow.pyfunc.PY_VERSION in model_config.flavors[mlflow.pyfunc.FLAVOR_NAME]
-    reloaded_model = mlflow.pyfunc.load_pyfunc(pyfunc_model_path)
+    assert kiwi.pyfunc.FLAVOR_NAME in model_config.flavors
+    assert kiwi.pyfunc.PY_VERSION in model_config.flavors[kiwi.pyfunc.FLAVOR_NAME]
+    reloaded_model = kiwi.pyfunc.load_pyfunc(pyfunc_model_path)
     np.testing.assert_array_equal(
         sklearn_knn_model.predict(iris_data[0]), reloaded_model.predict(iris_data[0]))
-    mlflow.end_run()
+    kiwi.end_run()
 
 
 @pytest.mark.large
 def test_save_model_with_unsupported_argument_combinations_throws_exception(model_path):
     with pytest.raises(MlflowException) as exc_info:
-        mlflow.pyfunc.save_model(path=model_path,
-                                 data_path="/path/to/data")
+        kiwi.pyfunc.save_model(path=model_path,
+                               data_path="/path/to/data")
     assert "Either `loader_module` or `python_model` must be specified" in str(exc_info)
 
 
 @pytest.mark.large
 def test_log_model_with_unsupported_argument_combinations_throws_exception():
-    with mlflow.start_run(), pytest.raises(MlflowException) as exc_info:
-        mlflow.pyfunc.log_model(artifact_path="pyfunc_model",
-                                data_path="/path/to/data")
+    with kiwi.start_run(), pytest.raises(MlflowException) as exc_info:
+        kiwi.pyfunc.log_model(artifact_path="pyfunc_model",
+                              data_path="/path/to/data")
     assert "Either `loader_module` or `python_model` must be specified" in str(exc_info)
 
 
@@ -337,20 +337,20 @@ def test_log_model_persists_specified_conda_env_file_in_mlflow_model_directory(
         pickle.dump(sklearn_knn_model, f)
 
     pyfunc_artifact_path = "pyfunc_model"
-    with mlflow.start_run():
-        mlflow.pyfunc.log_model(artifact_path=pyfunc_artifact_path,
-                                data_path=sk_model_path,
-                                loader_module=os.path.basename(__file__)[:-3],
-                                code_path=[__file__],
-                                conda_env=pyfunc_custom_env_file)
-        run_id = mlflow.active_run().info.run_id
+    with kiwi.start_run():
+        kiwi.pyfunc.log_model(artifact_path=pyfunc_artifact_path,
+                              data_path=sk_model_path,
+                              loader_module=os.path.basename(__file__)[:-3],
+                              code_path=[__file__],
+                              conda_env=pyfunc_custom_env_file)
+        run_id = kiwi.active_run().info.run_id
 
     pyfunc_model_path = _download_artifact_from_uri("runs:/{run_id}/{artifact_path}".format(
         run_id=run_id, artifact_path=pyfunc_artifact_path))
 
     pyfunc_conf = _get_flavor_configuration(
-        model_path=pyfunc_model_path, flavor_name=mlflow.pyfunc.FLAVOR_NAME)
-    saved_conda_env_path = os.path.join(pyfunc_model_path, pyfunc_conf[mlflow.pyfunc.ENV])
+        model_path=pyfunc_model_path, flavor_name=kiwi.pyfunc.FLAVOR_NAME)
+    saved_conda_env_path = os.path.join(pyfunc_model_path, pyfunc_conf[kiwi.pyfunc.ENV])
     assert os.path.exists(saved_conda_env_path)
     assert saved_conda_env_path != pyfunc_custom_env_file
 
@@ -369,20 +369,20 @@ def test_log_model_persists_specified_conda_env_dict_in_mlflow_model_directory(
         pickle.dump(sklearn_knn_model, f)
 
     pyfunc_artifact_path = "pyfunc_model"
-    with mlflow.start_run():
-        mlflow.pyfunc.log_model(artifact_path=pyfunc_artifact_path,
-                                data_path=sk_model_path,
-                                loader_module=os.path.basename(__file__)[:-3],
-                                code_path=[__file__],
-                                conda_env=pyfunc_custom_env_dict)
-        run_id = mlflow.active_run().info.run_id
+    with kiwi.start_run():
+        kiwi.pyfunc.log_model(artifact_path=pyfunc_artifact_path,
+                              data_path=sk_model_path,
+                              loader_module=os.path.basename(__file__)[:-3],
+                              code_path=[__file__],
+                              conda_env=pyfunc_custom_env_dict)
+        run_id = kiwi.active_run().info.run_id
 
     pyfunc_model_path = _download_artifact_from_uri("runs:/{run_id}/{artifact_path}".format(
         run_id=run_id, artifact_path=pyfunc_artifact_path))
 
     pyfunc_conf = _get_flavor_configuration(
-        model_path=pyfunc_model_path, flavor_name=mlflow.pyfunc.FLAVOR_NAME)
-    saved_conda_env_path = os.path.join(pyfunc_model_path, pyfunc_conf[mlflow.pyfunc.ENV])
+        model_path=pyfunc_model_path, flavor_name=kiwi.pyfunc.FLAVOR_NAME)
+    saved_conda_env_path = os.path.join(pyfunc_model_path, pyfunc_conf[kiwi.pyfunc.ENV])
     assert os.path.exists(saved_conda_env_path)
 
     with open(saved_conda_env_path, "r") as f:
@@ -398,20 +398,20 @@ def test_log_model_without_specified_conda_env_uses_default_env_with_expected_de
         pickle.dump(sklearn_knn_model, f)
 
     pyfunc_artifact_path = "pyfunc_model"
-    with mlflow.start_run():
-        mlflow.pyfunc.log_model(artifact_path=pyfunc_artifact_path,
-                                data_path=sk_model_path,
-                                loader_module=os.path.basename(__file__)[:-3],
-                                code_path=[__file__])
-        run_id = mlflow.active_run().info.run_id
+    with kiwi.start_run():
+        kiwi.pyfunc.log_model(artifact_path=pyfunc_artifact_path,
+                              data_path=sk_model_path,
+                              loader_module=os.path.basename(__file__)[:-3],
+                              code_path=[__file__])
+        run_id = kiwi.active_run().info.run_id
 
     pyfunc_model_path = _download_artifact_from_uri("runs:/{run_id}/{artifact_path}".format(
         run_id=run_id, artifact_path=pyfunc_artifact_path))
 
     pyfunc_conf = _get_flavor_configuration(
-        model_path=pyfunc_model_path, flavor_name=mlflow.pyfunc.FLAVOR_NAME)
-    conda_env_path = os.path.join(pyfunc_model_path, pyfunc_conf[mlflow.pyfunc.ENV])
+        model_path=pyfunc_model_path, flavor_name=kiwi.pyfunc.FLAVOR_NAME)
+    conda_env_path = os.path.join(pyfunc_model_path, pyfunc_conf[kiwi.pyfunc.ENV])
     with open(conda_env_path, "r") as f:
         conda_env = yaml.safe_load(f)
 
-    assert conda_env == mlflow.pyfunc.model.get_default_conda_env()
+    assert conda_env == kiwi.pyfunc.model.get_default_conda_env()

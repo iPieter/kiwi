@@ -10,9 +10,9 @@ from keras.preprocessing.text import Tokenizer
 
 # The following import and function call are the only additions to code required
 # to automatically log metrics and parameters to MLflow.
-import mlflow.keras
+import kiwi.keras
 
-mlflow.keras.autolog()
+kiwi.keras.autolog()
 
 max_words = 1000
 batch_size = 32

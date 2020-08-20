@@ -6,10 +6,10 @@ from keras.models import Sequential
 import numpy as np
 import pytest
 
-import mlflow
-import mlflow.spark
-import mlflow.keras
-import mlflow.tensorflow
+import kiwi
+import kiwi.spark
+import kiwi.keras
+import kiwi.tensorflow
 
 from tests.spark_autologging.utils import _assert_spark_data_logged
 from tests.spark_autologging.utils import spark_session  # pylint: disable=unused-import
@@ -19,9 +19,9 @@ from tests.spark_autologging.utils import file_path, data_format  # pylint: disa
 
 @pytest.fixture()
 def http_tracking_uri_mock():
-    mlflow.set_tracking_uri("http://some-cool-uri")
+    kiwi.set_tracking_uri("http://some-cool-uri")
     yield
-    mlflow.set_tracking_uri(None)
+    kiwi.set_tracking_uri(None)
 
 
 def _fit_keras(pandas_df, epochs):
@@ -40,25 +40,25 @@ def _fit_keras(pandas_df, epochs):
 
 
 def _fit_keras_model_with_active_run(pandas_df, epochs):
-    run_id = mlflow.active_run().info.run_id
+    run_id = kiwi.active_run().info.run_id
     _fit_keras(pandas_df, epochs)
     run_id = run_id
-    return mlflow.get_run(run_id)
+    return kiwi.get_run(run_id)
 
 
 def _fit_keras_model_no_active_run(pandas_df, epochs):
-    orig_runs = mlflow.search_runs()
+    orig_runs = kiwi.search_runs()
     orig_run_ids = set(orig_runs['run_id'])
     _fit_keras(pandas_df, epochs)
-    new_runs = mlflow.search_runs()
+    new_runs = kiwi.search_runs()
     new_run_ids = set(new_runs['run_id'])
     assert len(new_run_ids) == len(orig_run_ids) + 1
     run_id = (new_run_ids - orig_run_ids).pop()
-    return mlflow.get_run(run_id)
+    return kiwi.get_run(run_id)
 
 
 def _fit_keras_model(pandas_df, epochs):
-    active_run = mlflow.active_run()
+    active_run = kiwi.active_run()
     if active_run:
         return _fit_keras_model_with_active_run(pandas_df, epochs)
     else:
@@ -68,22 +68,22 @@ def _fit_keras_model(pandas_df, epochs):
 @pytest.mark.large
 def test_spark_autologging_with_keras_autologging(
         spark_session, data_format, file_path):
-    assert mlflow.active_run() is None
-    mlflow.spark.autolog()
-    mlflow.keras.autolog()
+    assert kiwi.active_run() is None
+    kiwi.spark.autolog()
+    kiwi.keras.autolog()
     df = spark_session.read.format(data_format).option("header", "true"). \
         option("inferSchema", "true").load(file_path).select("number1", "number2")
     pandas_df = df.toPandas()
     run = _fit_keras_model(pandas_df, epochs=1)
     _assert_spark_data_logged(run, file_path, data_format)
-    assert mlflow.active_run() is None
+    assert kiwi.active_run() is None
 
 
 @pytest.mark.large
 def test_spark_keras_autologging_context_provider(
         spark_session, data_format, file_path):
-    mlflow.spark.autolog()
-    mlflow.keras.autolog()
+    kiwi.spark.autolog()
+    kiwi.keras.autolog()
 
     df = spark_session.read.format(data_format).option("header", "true"). \
         option("inferSchema", "true").load(file_path).select("number1", "number2")
@@ -91,29 +91,29 @@ def test_spark_keras_autologging_context_provider(
 
     # DF info should be logged to the first run (it should be added to our context provider after
     # the toPandas() call above & then logged here)
-    with mlflow.start_run():
+    with kiwi.start_run():
         run = _fit_keras_model(pandas_df, epochs=1)
     _assert_spark_data_logged(run, file_path, data_format)
 
-    with mlflow.start_run():
+    with kiwi.start_run():
         pandas_df2 = df.filter("number1 > 0").toPandas()
         run2 = _fit_keras_model(pandas_df2, epochs=1)
     assert run2.info.run_id != run.info.run_id
     _assert_spark_data_logged(run2, file_path, data_format)
     time.sleep(1)
-    assert mlflow.active_run() is None
+    assert kiwi.active_run() is None
 
 
 @pytest.mark.large
 def test_spark_and_keras_autologging_all_runs_managed(
         spark_session, data_format, file_path):
-    mlflow.spark.autolog()
-    mlflow.keras.autolog()
+    kiwi.spark.autolog()
+    kiwi.keras.autolog()
     for _ in range(2):
-        with mlflow.start_run():
+        with kiwi.start_run():
             df = spark_session.read.format(data_format).option("header", "true"). \
                 option("inferSchema", "true").load(file_path).select("number1", "number2")
             pandas_df = df.toPandas()
             run = _fit_keras_model(pandas_df, epochs=1)
         _assert_spark_data_logged(run, file_path, data_format)
-    assert mlflow.active_run() is None
+    assert kiwi.active_run() is None

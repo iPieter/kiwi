@@ -1,22 +1,22 @@
 # in case this is run outside of conda environment with python2
-import mlflow
-from mlflow import pyfunc
+import kiwi
+from kiwi import pyfunc
 import pandas as pd
 import argparse
 import shutil
 import tempfile
 import tensorflow as tf
-import mlflow.tensorflow
+import kiwi.tensorflow
 
 # Enable auto-logging to MLflow to capture TensorBoard metrics.
-mlflow.tensorflow.autolog()
+kiwi.tensorflow.autolog()
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--steps', default=1000, type=int,
                     help='number of steps used for training and evaluation')
 
 def main(argv):
-    with mlflow.start_run():
+    with kiwi.start_run():
         args = parser.parse_args(argv[1:])
 
         # Builds, trains and evaluates a tf.estimator. Then, exports it for inference,
@@ -50,7 +50,7 @@ def main(argv):
             # Since the model was automatically logged as an artifact (more specifically
             # a MLflow Model), we don't need to use saved_estimator_path to load back the model.
             # MLflow takes care of it!
-            pyfunc_model = pyfunc.load_model(mlflow.get_artifact_uri('model'))
+            pyfunc_model = pyfunc.load_model(kiwi.get_artifact_uri('model'))
             df = pd.DataFrame(data=x_test, columns=["features"] * x_train.shape[1])
 
             # Checking the PyFunc's predictions are the same as the original model's predictions.

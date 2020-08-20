@@ -6,11 +6,11 @@ from mock import ANY
 import pytest
 import mock
 
-from mlflow.entities.model_registry import ModelVersion, RegisteredModel, \
+from kiwi.entities.model_registry import ModelVersion, RegisteredModel, \
     RegisteredModelTag, ModelVersionTag
-from mlflow.exceptions import MlflowException
-from mlflow.store.entities.paged_list import PagedList
-from mlflow.tracking._model_registry.client import ModelRegistryClient
+from kiwi.exceptions import MlflowException
+from kiwi.store.entities.paged_list import PagedList
+from kiwi.tracking._model_registry.client import ModelRegistryClient
 
 
 @pytest.fixture

@@ -1,14 +1,14 @@
 import os
 
-import mlflow
-from mlflow.models.utils import _save_example
+import kiwi
+from kiwi.models.utils import _save_example
 
-from mlflow.tracking.artifact_utils import _download_artifact_from_uri
-from mlflow.models import Model
-from mlflow.models.signature import ModelSignature
-from mlflow.types.schema import Schema, ColSpec
-from mlflow.utils.file_utils import TempDir
-from mlflow.utils.proto_json_utils import _dataframe_from_json
+from kiwi.tracking.artifact_utils import _download_artifact_from_uri
+from kiwi.models import Model
+from kiwi.models.signature import ModelSignature
+from kiwi.types.schema import Schema, ColSpec
+from kiwi.utils.file_utils import TempDir
+from kiwi.utils.proto_json_utils import _dataframe_from_json
 
 
 def test_model_save_load():
@@ -65,11 +65,11 @@ class TestFlavor(object):
 
 def test_model_log():
     with TempDir(chdr=True) as tmp:
-        experiment_id = mlflow.create_experiment("test")
+        experiment_id = kiwi.create_experiment("test")
         sig = ModelSignature(inputs=Schema([ColSpec("integer", "x"), ColSpec("integer", "y")]),
                              outputs=Schema([ColSpec(name=None, type="double")]))
         input_example = {"x": 1, "y": 2}
-        with mlflow.start_run(experiment_id=experiment_id) as r:
+        with kiwi.start_run(experiment_id=experiment_id) as r:
             Model.log("some/path", TestFlavor,
                       signature=sig,
                       input_example=input_example)

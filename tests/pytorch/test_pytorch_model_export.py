@@ -15,19 +15,19 @@ import pandas.testing
 import sklearn.datasets as datasets
 import yaml
 
-import mlflow.pyfunc as pyfunc
-import mlflow.pytorch
-import mlflow.pyfunc.scoring_server as pyfunc_scoring_server
-from mlflow import tracking
-from mlflow.exceptions import MlflowException
-from mlflow.models import Model, infer_signature
-from mlflow.models.utils import _read_example
-from mlflow.pytorch import pickle_module as mlflow_pytorch_pickle_module
-from mlflow.store.artifact.s3_artifact_repo import S3ArtifactRepository
-from mlflow.tracking.artifact_utils import _download_artifact_from_uri
-from mlflow.utils.environment import _mlflow_conda_env
-from mlflow.utils.file_utils import TempDir
-from mlflow.utils.model_utils import _get_flavor_configuration
+import kiwi.pyfunc as pyfunc
+import kiwi.pytorch
+import kiwi.pyfunc.scoring_server as pyfunc_scoring_server
+from kiwi import tracking
+from kiwi.exceptions import MlflowException
+from kiwi.models import Model, infer_signature
+from kiwi.models.utils import _read_example
+from kiwi.pytorch import pickle_module as mlflow_pytorch_pickle_module
+from kiwi.store.artifact.s3_artifact_repo import S3ArtifactRepository
+from kiwi.tracking.artifact_utils import _download_artifact_from_uri
+from kiwi.utils.environment import _mlflow_conda_env
+from kiwi.utils.file_utils import TempDir
+from kiwi.utils.model_utils import _get_flavor_configuration
 
 
 _logger = logging.getLogger(__name__)
@@ -187,9 +187,9 @@ def test_signature_and_examples_are_saved_correctly(sequential_model, data):
         for example in (None, example_):
             with TempDir() as tmp:
                 path = tmp.path("model")
-                mlflow.pytorch.save_model(model, path=path,
-                                          signature=signature,
-                                          input_example=example)
+                kiwi.pytorch.save_model(model, path=path,
+                                        signature=signature,
+                                        input_example=example)
                 mlflow_model = Model.load(path)
                 assert signature == mlflow_model.signature
                 if example is None:
@@ -207,21 +207,21 @@ def test_log_model(sequential_model, data, sequential_predicted):
             try:
                 tracking.set_tracking_uri(tmp.path("test"))
                 if should_start_run:
-                    mlflow.start_run()
+                    kiwi.start_run()
 
                 artifact_path = "pytorch"
-                mlflow.pytorch.log_model(sequential_model, artifact_path=artifact_path)
+                kiwi.pytorch.log_model(sequential_model, artifact_path=artifact_path)
                 model_uri = "runs:/{run_id}/{artifact_path}".format(
-                    run_id=mlflow.active_run().info.run_id,
+                    run_id=kiwi.active_run().info.run_id,
                     artifact_path=artifact_path)
 
                 # Load model
-                sequential_model_loaded = mlflow.pytorch.load_model(model_uri=model_uri)
+                sequential_model_loaded = kiwi.pytorch.load_model(model_uri=model_uri)
 
                 test_predictions = _predict(sequential_model_loaded, data)
                 np.testing.assert_array_equal(test_predictions, sequential_predicted)
             finally:
-                mlflow.end_run()
+                kiwi.end_run()
                 tracking.set_tracking_uri(old_uri)
 
 
@@ -229,29 +229,29 @@ def test_log_model_calls_register_model(module_scoped_subclassed_model):
     custom_pickle_module = pickle
     artifact_path = "model"
     register_model_patch = mock.patch("mlflow.register_model")
-    with mlflow.start_run(), register_model_patch:
-        mlflow.pytorch.log_model(
+    with kiwi.start_run(), register_model_patch:
+        kiwi.pytorch.log_model(
             artifact_path=artifact_path,
             pytorch_model=module_scoped_subclassed_model,
             conda_env=None,
             pickle_module=custom_pickle_module,
             registered_model_name="AdsModel1")
-        model_uri = "runs:/{run_id}/{artifact_path}".format(run_id=mlflow.active_run().info.run_id,
+        model_uri = "runs:/{run_id}/{artifact_path}".format(run_id=kiwi.active_run().info.run_id,
                                                             artifact_path=artifact_path)
-        mlflow.register_model.assert_called_once_with(model_uri, "AdsModel1")
+        kiwi.register_model.assert_called_once_with(model_uri, "AdsModel1")
 
 
 def test_log_model_no_registered_model_name(module_scoped_subclassed_model):
     custom_pickle_module = pickle
     artifact_path = "model"
     register_model_patch = mock.patch("mlflow.register_model")
-    with mlflow.start_run(), register_model_patch:
-        mlflow.pytorch.log_model(
+    with kiwi.start_run(), register_model_patch:
+        kiwi.pytorch.log_model(
             artifact_path=artifact_path,
             pytorch_model=module_scoped_subclassed_model,
             conda_env=None,
             pickle_module=custom_pickle_module)
-        mlflow.register_model.assert_not_called()
+        kiwi.register_model.assert_not_called()
 
 
 @pytest.mark.large
@@ -259,16 +259,16 @@ def test_raise_exception(sequential_model):
     with TempDir(chdr=True, remove_on_exit=True) as tmp:
         path = tmp.path("model")
         with pytest.raises(IOError):
-            mlflow.pytorch.load_model(path)
+            kiwi.pytorch.load_model(path)
 
         with pytest.raises(TypeError):
-            mlflow.pytorch.save_model([1, 2, 3], path)
+            kiwi.pytorch.save_model([1, 2, 3], path)
 
-        mlflow.pytorch.save_model(sequential_model, path)
+        kiwi.pytorch.save_model(sequential_model, path)
         with pytest.raises(RuntimeError):
-            mlflow.pytorch.save_model(sequential_model, path)
+            kiwi.pytorch.save_model(sequential_model, path)
 
-        from mlflow import sklearn
+        from kiwi import sklearn
         import sklearn.neighbors as knn
         path = tmp.path("knn.pkl")
         knn = knn.KNeighborsClassifier()
@@ -277,19 +277,19 @@ def test_raise_exception(sequential_model):
         path = tmp.path("knn")
         sklearn.save_model(knn, path=path)
         with pytest.raises(MlflowException):
-            mlflow.pytorch.load_model(path)
+            kiwi.pytorch.load_model(path)
 
 
 @pytest.mark.large
 def test_save_and_load_model(sequential_model, model_path, data, sequential_predicted):
-    mlflow.pytorch.save_model(sequential_model, model_path)
+    kiwi.pytorch.save_model(sequential_model, model_path)
 
     # Loading pytorch model
-    sequential_model_loaded = mlflow.pytorch.load_model(model_path)
+    sequential_model_loaded = kiwi.pytorch.load_model(model_path)
     np.testing.assert_array_equal(_predict(sequential_model_loaded, data), sequential_predicted)
 
     # Loading pyfunc model
-    pyfunc_loaded = mlflow.pyfunc.load_pyfunc(model_path)
+    pyfunc_loaded = kiwi.pyfunc.load_pyfunc(model_path)
     np.testing.assert_array_almost_equal(
         pyfunc_loaded.predict(data[0]).values[:, 0], sequential_predicted, decimal=4)
 
@@ -297,7 +297,7 @@ def test_save_and_load_model(sequential_model, model_path, data, sequential_pred
 @pytest.mark.large
 def test_load_model_from_remote_uri_succeeds(
         sequential_model, model_path, mock_s3_bucket, data, sequential_predicted):
-    mlflow.pytorch.save_model(sequential_model, model_path)
+    kiwi.pytorch.save_model(sequential_model, model_path)
 
     artifact_root = "s3://{bucket_name}".format(bucket_name=mock_s3_bucket)
     artifact_path = "model"
@@ -305,14 +305,14 @@ def test_load_model_from_remote_uri_succeeds(
     artifact_repo.log_artifacts(model_path, artifact_path=artifact_path)
 
     model_uri = artifact_root + "/" + artifact_path
-    sequential_model_loaded = mlflow.pytorch.load_model(model_uri=model_uri)
+    sequential_model_loaded = kiwi.pytorch.load_model(model_uri=model_uri)
     np.testing.assert_array_equal(_predict(sequential_model_loaded, data), sequential_predicted)
 
 
 @pytest.mark.large
 def test_model_save_persists_specified_conda_env_in_mlflow_model_directory(
         sequential_model, model_path, pytorch_custom_env):
-    mlflow.pytorch.save_model(
+    kiwi.pytorch.save_model(
             pytorch_model=sequential_model, path=model_path, conda_env=pytorch_custom_env)
 
     pyfunc_conf = _get_flavor_configuration(model_path=model_path, flavor_name=pyfunc.FLAVOR_NAME)
@@ -329,9 +329,9 @@ def test_model_save_persists_specified_conda_env_in_mlflow_model_directory(
 
 @pytest.mark.large
 def test_model_save_accepts_conda_env_as_dict(sequential_model, model_path):
-    conda_env = dict(mlflow.pytorch.get_default_conda_env())
+    conda_env = dict(kiwi.pytorch.get_default_conda_env())
     conda_env["dependencies"].append("pytest")
-    mlflow.pytorch.save_model(pytorch_model=sequential_model, path=model_path, conda_env=conda_env)
+    kiwi.pytorch.save_model(pytorch_model=sequential_model, path=model_path, conda_env=conda_env)
 
     pyfunc_conf = _get_flavor_configuration(model_path=model_path, flavor_name=pyfunc.FLAVOR_NAME)
     saved_conda_env_path = os.path.join(model_path, pyfunc_conf[pyfunc.ENV])
@@ -346,12 +346,12 @@ def test_model_save_accepts_conda_env_as_dict(sequential_model, model_path):
 def test_model_log_persists_specified_conda_env_in_mlflow_model_directory(
         sequential_model, pytorch_custom_env):
     artifact_path = "model"
-    with mlflow.start_run():
-        mlflow.pytorch.log_model(pytorch_model=sequential_model,
-                                 artifact_path=artifact_path,
-                                 conda_env=pytorch_custom_env)
+    with kiwi.start_run():
+        kiwi.pytorch.log_model(pytorch_model=sequential_model,
+                               artifact_path=artifact_path,
+                               conda_env=pytorch_custom_env)
         model_path = _download_artifact_from_uri("runs:/{run_id}/{artifact_path}".format(
-            run_id=mlflow.active_run().info.run_id, artifact_path=artifact_path))
+            run_id=kiwi.active_run().info.run_id, artifact_path=artifact_path))
 
     pyfunc_conf = _get_flavor_configuration(model_path=model_path, flavor_name=pyfunc.FLAVOR_NAME)
     saved_conda_env_path = os.path.join(model_path, pyfunc_conf[pyfunc.ENV])
@@ -368,42 +368,42 @@ def test_model_log_persists_specified_conda_env_in_mlflow_model_directory(
 @pytest.mark.large
 def test_model_save_without_specified_conda_env_uses_default_env_with_expected_dependencies(
         sequential_model, model_path):
-    mlflow.pytorch.save_model(pytorch_model=sequential_model, path=model_path, conda_env=None)
+    kiwi.pytorch.save_model(pytorch_model=sequential_model, path=model_path, conda_env=None)
 
     pyfunc_conf = _get_flavor_configuration(model_path=model_path, flavor_name=pyfunc.FLAVOR_NAME)
     conda_env_path = os.path.join(model_path, pyfunc_conf[pyfunc.ENV])
     with open(conda_env_path, "r") as f:
         conda_env = yaml.safe_load(f)
 
-    assert conda_env == mlflow.pytorch.get_default_conda_env()
+    assert conda_env == kiwi.pytorch.get_default_conda_env()
 
 
 @pytest.mark.large
 def test_model_log_without_specified_conda_env_uses_default_env_with_expected_dependencies(
         sequential_model):
     artifact_path = "model"
-    with mlflow.start_run():
-        mlflow.pytorch.log_model(pytorch_model=sequential_model,
-                                 artifact_path=artifact_path,
-                                 conda_env=None)
+    with kiwi.start_run():
+        kiwi.pytorch.log_model(pytorch_model=sequential_model,
+                               artifact_path=artifact_path,
+                               conda_env=None)
         model_path = _download_artifact_from_uri("runs:/{run_id}/{artifact_path}".format(
-            run_id=mlflow.active_run().info.run_id, artifact_path=artifact_path))
+            run_id=kiwi.active_run().info.run_id, artifact_path=artifact_path))
 
     pyfunc_conf = _get_flavor_configuration(model_path=model_path, flavor_name=pyfunc.FLAVOR_NAME)
     conda_env_path = os.path.join(model_path, pyfunc_conf[pyfunc.ENV])
     with open(conda_env_path, "r") as f:
         conda_env = yaml.safe_load(f)
 
-    assert conda_env == mlflow.pytorch.get_default_conda_env()
+    assert conda_env == kiwi.pytorch.get_default_conda_env()
 
 
 @pytest.mark.large
 def test_load_model_with_differing_pytorch_version_logs_warning(sequential_model, model_path):
-    mlflow.pytorch.save_model(pytorch_model=sequential_model, path=model_path)
+    kiwi.pytorch.save_model(pytorch_model=sequential_model, path=model_path)
     saver_pytorch_version = "1.0"
     model_config_path = os.path.join(model_path, "MLmodel")
     model_config = Model.load(model_config_path)
-    model_config.flavors[mlflow.pytorch.FLAVOR_NAME]["pytorch_version"] = saver_pytorch_version
+    model_config.flavors[kiwi.pytorch.FLAVOR_NAME]["pytorch_version"] = saver_pytorch_version
     model_config.save(model_config_path)
 
     log_messages = []
@@ -416,7 +416,7 @@ def test_load_model_with_differing_pytorch_version_logs_warning(sequential_model
             mock.patch("torch.__version__") as torch_version_mock:
         torch_version_mock.__str__ = lambda *args, **kwargs: loader_pytorch_version
         warn_mock.side_effect = custom_warn
-        mlflow.pytorch.load_model(model_uri=model_path)
+        kiwi.pytorch.load_model(model_uri=model_path)
 
     assert any([
         "does not match installed PyTorch version" in log_message and
@@ -429,7 +429,7 @@ def test_load_model_with_differing_pytorch_version_logs_warning(sequential_model
 @pytest.mark.large
 def test_pyfunc_model_serving_with_module_scoped_subclassed_model_and_default_conda_env(
         module_scoped_subclassed_model, model_path, data):
-    mlflow.pytorch.save_model(
+    kiwi.pytorch.save_model(
         path=model_path,
         pytorch_model=module_scoped_subclassed_model,
         conda_env=None,
@@ -452,7 +452,7 @@ def test_pyfunc_model_serving_with_module_scoped_subclassed_model_and_default_co
 def test_save_model_with_wrong_codepaths_fails_corrrectly(
         module_scoped_subclassed_model, model_path, data):
     with pytest.raises(TypeError) as exc_info:
-        mlflow.pytorch.save_model(
+        kiwi.pytorch.save_model(
             path=model_path,
             pytorch_model=module_scoped_subclassed_model,
             conda_env=None,
@@ -465,7 +465,7 @@ def test_save_model_with_wrong_codepaths_fails_corrrectly(
 @pytest.mark.large
 def test_pyfunc_model_serving_with_main_scoped_subclassed_model_and_custom_pickle_module(
         main_scoped_subclassed_model, model_path, data):
-    mlflow.pytorch.save_model(
+    kiwi.pytorch.save_model(
         path=model_path,
         pytorch_model=main_scoped_subclassed_model,
         conda_env=None,
@@ -491,7 +491,7 @@ def test_load_model_succeeds_with_dependencies_specified_via_code_paths(
     # Save a PyTorch model whose class is defined in the current test suite. Because the
     # `tests` module is not available when the model is deployed for local scoring, we include
     # the test suite file as a code dependency
-    mlflow.pytorch.save_model(
+    kiwi.pytorch.save_model(
         path=model_path,
         pytorch_model=module_scoped_subclassed_model,
         conda_env=None,
@@ -502,7 +502,7 @@ def test_load_model_succeeds_with_dependencies_specified_via_code_paths(
     class TorchValidatorModel(pyfunc.PythonModel):
 
         def load_context(self, context):
-            self.pytorch_model = mlflow.pytorch.load_model(context.artifacts["pytorch_model"])
+            self.pytorch_model = kiwi.pytorch.load_model(context.artifacts["pytorch_model"])
 
         def predict(self, context, model_input):
             with torch.no_grad():
@@ -511,14 +511,14 @@ def test_load_model_succeeds_with_dependencies_specified_via_code_paths(
                 return pd.DataFrame(output_tensor.numpy())
 
     pyfunc_artifact_path = "pyfunc_model"
-    with mlflow.start_run():
+    with kiwi.start_run():
         pyfunc.log_model(artifact_path=pyfunc_artifact_path,
                          python_model=TorchValidatorModel(),
                          artifacts={
                             "pytorch_model": model_path,
                          })
         pyfunc_model_path = _download_artifact_from_uri("runs:/{run_id}/{artifact_path}".format(
-            run_id=mlflow.active_run().info.run_id, artifact_path=pyfunc_artifact_path))
+            run_id=kiwi.active_run().info.run_id, artifact_path=pyfunc_artifact_path))
 
     # Deploy the custom pyfunc model and ensure that it is able to successfully load its
     # constituent PyTorch model via `mlflow.pytorch.load_model`
@@ -541,7 +541,7 @@ def test_load_pyfunc_loads_torch_model_using_pickle_module_specified_at_save_tim
         module_scoped_subclassed_model, model_path):
     custom_pickle_module = pickle
 
-    mlflow.pytorch.save_model(
+    kiwi.pytorch.save_model(
         path=model_path,
         pytorch_model=module_scoped_subclassed_model,
         conda_env=None,
@@ -569,14 +569,14 @@ def test_load_model_loads_torch_model_using_pickle_module_specified_at_save_time
     custom_pickle_module = pickle
 
     artifact_path = "pytorch_model"
-    with mlflow.start_run():
-        mlflow.pytorch.log_model(
+    with kiwi.start_run():
+        kiwi.pytorch.log_model(
             artifact_path=artifact_path,
             pytorch_model=module_scoped_subclassed_model,
             conda_env=None,
             pickle_module=custom_pickle_module)
         model_uri = "runs:/{run_id}/{artifact_path}".format(
-            run_id=mlflow.active_run().info.run_id,
+            run_id=kiwi.active_run().info.run_id,
             artifact_path=artifact_path)
 
     import_module_fn = importlib.import_module
@@ -604,7 +604,7 @@ def test_load_pyfunc_succeeds_when_data_is_model_file_instead_of_directory(
     serialized PyTorch model file, as opposed to the current format: a directory containing a
     serialized model file and pickle module information.
     """
-    mlflow.pytorch.save_model(
+    kiwi.pytorch.save_model(
         path=model_path,
         pytorch_model=module_scoped_subclassed_model,
         conda_env=None)
@@ -615,9 +615,9 @@ def test_load_pyfunc_succeeds_when_data_is_model_file_instead_of_directory(
     assert pyfunc_conf is not None
     model_data_path = os.path.join(model_path, pyfunc_conf[pyfunc.DATA])
     assert os.path.exists(model_data_path)
-    assert mlflow.pytorch._SERIALIZED_TORCH_MODEL_FILE_NAME in os.listdir(model_data_path)
+    assert kiwi.pytorch._SERIALIZED_TORCH_MODEL_FILE_NAME in os.listdir(model_data_path)
     pyfunc_conf[pyfunc.DATA] = os.path.join(
-        model_data_path, mlflow.pytorch._SERIALIZED_TORCH_MODEL_FILE_NAME)
+        model_data_path, kiwi.pytorch._SERIALIZED_TORCH_MODEL_FILE_NAME)
     model_conf.save(model_conf_path)
 
     loaded_pyfunc = pyfunc.load_pyfunc(model_path)
@@ -638,13 +638,13 @@ def test_load_model_succeeds_when_data_is_model_file_instead_of_directory(
     serialized model file and pickle module information.
     """
     artifact_path = "pytorch_model"
-    with mlflow.start_run():
-        mlflow.pytorch.log_model(
+    with kiwi.start_run():
+        kiwi.pytorch.log_model(
             artifact_path=artifact_path,
             pytorch_model=module_scoped_subclassed_model,
             conda_env=None)
         model_path = _download_artifact_from_uri("runs:/{run_id}/{artifact_path}".format(
-            run_id=mlflow.active_run().info.run_id, artifact_path=artifact_path))
+            run_id=kiwi.active_run().info.run_id, artifact_path=artifact_path))
 
     model_conf_path = os.path.join(model_path, "MLmodel")
     model_conf = Model.load(model_conf_path)
@@ -652,9 +652,9 @@ def test_load_model_succeeds_when_data_is_model_file_instead_of_directory(
     assert pyfunc_conf is not None
     model_data_path = os.path.join(model_path, pyfunc_conf[pyfunc.DATA])
     assert os.path.exists(model_data_path)
-    assert mlflow.pytorch._SERIALIZED_TORCH_MODEL_FILE_NAME in os.listdir(model_data_path)
+    assert kiwi.pytorch._SERIALIZED_TORCH_MODEL_FILE_NAME in os.listdir(model_data_path)
     pyfunc_conf[pyfunc.DATA] = os.path.join(
-        model_data_path, mlflow.pytorch._SERIALIZED_TORCH_MODEL_FILE_NAME)
+        model_data_path, kiwi.pytorch._SERIALIZED_TORCH_MODEL_FILE_NAME)
     model_conf.save(model_conf_path)
 
     loaded_pyfunc = pyfunc.load_pyfunc(model_path)
@@ -668,7 +668,7 @@ def test_load_model_succeeds_when_data_is_model_file_instead_of_directory(
 @pytest.mark.large
 def test_load_model_allows_user_to_override_pickle_module_via_keyword_argument(
         module_scoped_subclassed_model, model_path):
-    mlflow.pytorch.save_model(
+    kiwi.pytorch.save_model(
         path=model_path,
         pytorch_model=module_scoped_subclassed_model,
         conda_env=None,
@@ -692,7 +692,7 @@ def test_load_model_allows_user_to_override_pickle_module_via_keyword_argument(
             mock.patch("mlflow.pytorch._logger.warning") as warn_mock:
         mlflow_torch_pickle_load_mock.side_effect = validate_mlflow_torch_pickle_load_called
         warn_mock.side_effect = custom_warn
-        mlflow.pytorch.load_model(model_uri=model_path, pickle_module=mlflow_pytorch_pickle_module)
+        kiwi.pytorch.load_model(model_uri=model_path, pickle_module=mlflow_pytorch_pickle_module)
 
     assert all(pickle_call_results.values())
     assert any([
@@ -706,7 +706,7 @@ def test_load_model_allows_user_to_override_pickle_module_via_keyword_argument(
 @pytest.mark.large
 def test_load_model_raises_exception_when_pickle_module_cannot_be_imported(
         main_scoped_subclassed_model, model_path):
-    mlflow.pytorch.save_model(
+    kiwi.pytorch.save_model(
         path=model_path,
         pytorch_model=main_scoped_subclassed_model,
         conda_env=None)
@@ -716,13 +716,13 @@ def test_load_model_raises_exception_when_pickle_module_cannot_be_imported(
     pyfunc_conf = _get_flavor_configuration(model_path=model_path, flavor_name=pyfunc.FLAVOR_NAME)
     model_data_path = os.path.join(model_path, pyfunc_conf[pyfunc.DATA])
     assert os.path.exists(model_data_path)
-    assert mlflow.pytorch._PICKLE_MODULE_INFO_FILE_NAME in os.listdir(model_data_path)
+    assert kiwi.pytorch._PICKLE_MODULE_INFO_FILE_NAME in os.listdir(model_data_path)
     with open(
-            os.path.join(model_data_path, mlflow.pytorch._PICKLE_MODULE_INFO_FILE_NAME), "w") as f:
+            os.path.join(model_data_path, kiwi.pytorch._PICKLE_MODULE_INFO_FILE_NAME), "w") as f:
         f.write(bad_pickle_module_name)
 
     with pytest.raises(MlflowException) as exc_info:
-        mlflow.pytorch.load_model(model_uri=model_path)
+        kiwi.pytorch.load_model(model_uri=model_path)
 
     assert "Failed to import the pickle module" in str(exc_info)
     assert bad_pickle_module_name in str(exc_info)
@@ -731,13 +731,13 @@ def test_load_model_raises_exception_when_pickle_module_cannot_be_imported(
 @pytest.mark.release
 def test_sagemaker_docker_model_scoring_with_sequential_model_and_default_conda_env(
         model, model_path, data, sequential_predicted):
-    mlflow.pytorch.save_model(pytorch_model=model, path=model_path, conda_env=None)
+    kiwi.pytorch.save_model(pytorch_model=model, path=model_path, conda_env=None)
 
     scoring_response = score_model_in_sagemaker_docker_container(
             model_uri=model_path,
             data=data[0],
             content_type=pyfunc_scoring_server.CONTENT_TYPE_JSON_SPLIT_ORIENTED,
-            flavor=mlflow.pyfunc.FLAVOR_NAME,
+            flavor=kiwi.pyfunc.FLAVOR_NAME,
             activity_polling_timeout_seconds=360)
     deployed_model_preds = pd.DataFrame(json.loads(scoring_response.content))
 

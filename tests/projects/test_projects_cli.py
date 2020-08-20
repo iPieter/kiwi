@@ -8,9 +8,9 @@ import logging
 from click.testing import CliRunner
 import pytest
 
-from mlflow import cli
-from mlflow.tracking.client import MlflowClient
-from mlflow.utils import process
+from kiwi import cli
+from kiwi.tracking.client import MlflowClient
+from kiwi.utils import process
 from tests.integration.utils import invoke_cli_runner
 from tests.projects.utils import TEST_PROJECT_DIR, GIT_PROJECT_URI, SSH_PROJECT_URI, \
     TEST_NO_SPEC_PROJECT_DIR

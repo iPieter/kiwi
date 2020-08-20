@@ -6,8 +6,8 @@ import tempfile
 import mock
 import pytest
 
-from mlflow.data import is_uri, download_uri, DownloadException
-from mlflow.projects import _project_spec
+from kiwi.data import is_uri, download_uri, DownloadException
+from kiwi.projects import _project_spec
 
 TEST_DIR = "tests"
 TEST_PROJECT_DIR = os.path.join(TEST_DIR, "resources", "example_project")

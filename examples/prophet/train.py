@@ -6,8 +6,8 @@ import sys
 import pandas as pd
 import numpy as np
 
-import mlflow
-import mlflow.pyfunc
+import kiwi
+import kiwi.pyfunc
 
 import cloudpickle
 
@@ -21,7 +21,7 @@ logging.basicConfig(level=logging.WARN)
 logger = logging.getLogger(__name__)
 
 
-class FbProphetWrapper(mlflow.pyfunc.PythonModel):
+class FbProphetWrapper(kiwi.pyfunc.PythonModel):
 
     def __init__(self, model):
         self.model = model
@@ -63,7 +63,7 @@ if __name__ == "__main__":
             "Unable to download training & test CSV, check your internet connection. Error: %s", e)
 
     # Useful for multiple runs (only doing one run in this sample notebook)
-    with mlflow.start_run():
+    with kiwi.start_run():
         m = Prophet()
         m.fit(df)
 
@@ -77,8 +77,8 @@ if __name__ == "__main__":
         print("  Perf: \n%s" % df_p.head())
 
         # Log parameter, metrics, and model to MLflow
-        mlflow.log_param("rolling_window", rolling_window)
-        mlflow.log_metric("rmse", df_p.loc[0,'rmse'])
+        kiwi.log_param("rolling_window", rolling_window)
+        kiwi.log_metric("rmse", df_p.loc[0, 'rmse'])
 
-        mlflow.pyfunc.log_model("model", conda_env=conda_env, python_model=FbProphetWrapper(m))
-        print("Logged model with URI: runs:/{run_id}/model".format(run_id=mlflow.active_run().info.run_id))
+        kiwi.pyfunc.log_model("model", conda_env=conda_env, python_model=FbProphetWrapper(m))
+        print("Logged model with URI: runs:/{run_id}/model".format(run_id=kiwi.active_run().info.run_id))

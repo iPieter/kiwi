@@ -6,8 +6,8 @@ import pandas as pd
 import sklearn.datasets as datasets
 from fastai.tabular import tabular_learner, TabularList
 from fastai.metrics import accuracy
-import mlflow
-import mlflow.fastai
+import kiwi
+import kiwi.fastai
 from fastai.callbacks import EarlyStoppingCallback
 
 np.random.seed(1337)
@@ -19,9 +19,9 @@ MIN_DELTA = 99999999  # Forces earlystopping
 @pytest.fixture(params=[True, False])
 def manual_run(request, tracking_uri_mock):
     if request.param:
-        mlflow.start_run()
+        kiwi.start_run()
     yield
-    mlflow.end_run()
+    kiwi.end_run()
 
 
 def iris_dataframe():
@@ -47,21 +47,21 @@ def fastai_model(data, **kwargs):
 @pytest.mark.large
 @pytest.mark.parametrize('fit_variant', ['fit', 'fit_one_cycle'])
 def test_fastai_autolog_ends_auto_created_run(iris_data, fit_variant):
-    mlflow.fastai.autolog()
+    kiwi.fastai.autolog()
     model = fastai_model(iris_data)
     if fit_variant == 'fit_one_cycle':
         model.fit_one_cycle(1)
     else:
         model.fit(1)
-    assert mlflow.active_run() is None
+    assert kiwi.active_run() is None
 
 
 @pytest.mark.large
 @pytest.mark.parametrize('fit_variant', ['fit', 'fit_one_cycle'])
 def test_fastai_autolog_persists_manually_created_run(iris_data, fit_variant):
-    mlflow.fastai.autolog()
+    kiwi.fastai.autolog()
 
-    with mlflow.start_run() as run:
+    with kiwi.start_run() as run:
         model = fastai_model(iris_data)
 
         if fit_variant == 'fit_one_cycle':
@@ -69,13 +69,13 @@ def test_fastai_autolog_persists_manually_created_run(iris_data, fit_variant):
         else:
             model.fit(NUM_EPOCHS)
 
-        assert mlflow.active_run()
-        assert mlflow.active_run().info.run_id == run.info.run_id
+        assert kiwi.active_run()
+        assert kiwi.active_run().info.run_id == run.info.run_id
 
 
 @pytest.fixture
 def fastai_random_data_run(iris_data, fit_variant, manual_run):
-    mlflow.fastai.autolog()
+    kiwi.fastai.autolog()
 
     model = fastai_model(iris_data)
 
@@ -84,7 +84,7 @@ def fastai_random_data_run(iris_data, fit_variant, manual_run):
     else:
         model.fit(NUM_EPOCHS)
 
-    client = mlflow.tracking.MlflowClient()
+    client = kiwi.tracking.MlflowClient()
     return model, client.get_run(client.list_run_infos(experiment_id='0')[0].run_id)
 
 
@@ -101,7 +101,7 @@ def test_fastai_autolog_logs_expected_data(fastai_random_data_run, fit_variant):
     for o in model.metrics:
         assert o.__name__ in data.metrics
 
-    client = mlflow.tracking.MlflowClient()
+    client = kiwi.tracking.MlflowClient()
     metric_history = client.get_metric_history(run.info.run_id, 'valid_loss')
     assert np.array_equal([m.value for m in metric_history], model.recorder.val_losses)
 
@@ -122,7 +122,7 @@ def test_fastai_autolog_logs_expected_data(fastai_random_data_run, fit_variant):
     assert 'model_summary' in data.tags
 
     # Testing model_summary.txt is saved
-    client = mlflow.tracking.MlflowClient()
+    client = kiwi.tracking.MlflowClient()
     artifacts = client.list_artifacts(run.info.run_id)
     artifacts = map(lambda x: x.path, artifacts)
     assert 'model_summary.txt' in artifacts
@@ -144,18 +144,18 @@ def test_fastai_autolog_logs_default_params(fastai_random_data_run, fit_variant)
 @pytest.mark.parametrize('fit_variant', ['fit', 'fit_one_cycle'])
 def test_fastai_autolog_model_can_load_from_artifact(fastai_random_data_run):
     run_id = fastai_random_data_run[1].info.run_id
-    client = mlflow.tracking.MlflowClient()
+    client = kiwi.tracking.MlflowClient()
     artifacts = client.list_artifacts(run_id)
     artifacts = map(lambda x: x.path, artifacts)
     assert 'model' in artifacts
-    model = mlflow.fastai.load_model("runs:/" + run_id + "/model")
-    model_wrapper = mlflow.fastai._FastaiModelWrapper(model)
+    model = kiwi.fastai.load_model("runs:/" + run_id + "/model")
+    model_wrapper = kiwi.fastai._FastaiModelWrapper(model)
     model_wrapper.predict(iris_dataframe())
 
 
 @pytest.fixture
 def fastai_random_data_run_with_callback(iris_data, fit_variant, manual_run, callback, patience):
-    mlflow.fastai.autolog()
+    kiwi.fastai.autolog()
     callbacks = []
 
     if callback == 'early':
@@ -170,7 +170,7 @@ def fastai_random_data_run_with_callback(iris_data, fit_variant, manual_run, cal
     else:
         model.fit(NUM_EPOCHS)
 
-    client = mlflow.tracking.MlflowClient()
+    client = kiwi.tracking.MlflowClient()
     return model, client.get_run(client.list_run_infos(experiment_id='0')[0].run_id)
 
 
@@ -190,7 +190,7 @@ def test_fastai_autolog_early_stop_logs(fastai_random_data_run_with_callback, pa
     assert 'early_stop_min_delta' in params
     assert params['early_stop_min_delta'] == f'-{MIN_DELTA}'
 
-    client = mlflow.tracking.MlflowClient()
+    client = kiwi.tracking.MlflowClient()
     metric_history = client.get_metric_history(run.info.run_id, 'valid_loss')
     num_of_epochs = len(model.recorder.val_losses)
 
@@ -219,7 +219,7 @@ def test_fastai_autolog_early_stop_no_stop_does_not_log(
     assert 'restored_epoch' not in metrics
     """
     num_of_epochs = len(model.recorder.val_losses)
-    client = mlflow.tracking.MlflowClient()
+    client = kiwi.tracking.MlflowClient()
     metric_history = client.get_metric_history(run.info.run_id, 'valid_loss')
     # Check the test epoch numbers are correct
     assert num_of_epochs == NUM_EPOCHS
@@ -241,7 +241,7 @@ def test_fastai_autolog_non_early_stop_callback_does_not_log(fastai_random_data_
     assert 'restored_epoch' not in metrics
     assert 'early_stop_min_delta' not in params
     num_of_epochs = len(model.recorder.val_losses)
-    client = mlflow.tracking.MlflowClient()
+    client = kiwi.tracking.MlflowClient()
     metric_history = client.get_metric_history(run.info.run_id, 'valid_loss')
     # Check the test epoch numbers are correct
     assert num_of_epochs == NUM_EPOCHS

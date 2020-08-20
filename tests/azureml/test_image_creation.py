@@ -15,18 +15,18 @@ from keras.models import Sequential
 from keras.layers import Dense
 from click.testing import CliRunner
 
-import mlflow
-import mlflow.azureml
-import mlflow.azureml.cli
-import mlflow.keras
-import mlflow.sklearn
-from mlflow import pyfunc
-from mlflow.exceptions import MlflowException
-from mlflow.models import Model
-from mlflow.protos.databricks_pb2 import INVALID_PARAMETER_VALUE
-from mlflow.store.artifact.s3_artifact_repo import S3ArtifactRepository
-from mlflow.tracking.artifact_utils import _download_artifact_from_uri
-from mlflow.utils.file_utils import TempDir
+import kiwi
+import kiwi.azureml
+import kiwi.azureml.cli
+import kiwi.keras
+import kiwi.sklearn
+from kiwi import pyfunc
+from kiwi.exceptions import MlflowException
+from kiwi.models import Model
+from kiwi.protos.databricks_pb2 import INVALID_PARAMETER_VALUE
+from kiwi.store.artifact.s3_artifact_repo import S3ArtifactRepository
+from kiwi.tracking.artifact_utils import _download_artifact_from_uri
+from kiwi.utils.file_utils import TempDir
 
 from tests.helper_functions import set_boto_credentials  # pylint: disable=unused-import
 from tests.helper_functions import mock_s3_bucket  # pylint: disable=unused-import
@@ -112,10 +112,10 @@ def model_path(tmpdir):
 @mock.patch("mlflow.azureml.mlflow_version", "0.7.0")
 def test_build_image_with_absolute_model_path_calls_expected_azure_routines(
         sklearn_model, model_path):
-    mlflow.sklearn.save_model(sk_model=sklearn_model, path=model_path)
+    kiwi.sklearn.save_model(sk_model=sklearn_model, path=model_path)
     with AzureMLMocks() as aml_mocks:
         workspace = get_azure_workspace()
-        mlflow.azureml.build_image(model_uri=model_path, workspace=workspace)
+        kiwi.azureml.build_image(model_uri=model_path, workspace=workspace)
 
         assert aml_mocks["register_model"].call_count == 1
         assert aml_mocks["create_image"].call_count == 1
@@ -127,10 +127,10 @@ def test_build_image_with_relative_model_path_calls_expected_azure_routines(
         sklearn_model):
     with TempDir(chdr=True):
         model_path = "model"
-        mlflow.sklearn.save_model(sk_model=sklearn_model, path=model_path)
+        kiwi.sklearn.save_model(sk_model=sklearn_model, path=model_path)
         with AzureMLMocks() as aml_mocks:
             workspace = get_azure_workspace()
-            mlflow.azureml.build_image(model_uri=model_path, workspace=workspace)
+            kiwi.azureml.build_image(model_uri=model_path, workspace=workspace)
 
             assert aml_mocks["register_model"].call_count == 1
             assert aml_mocks["create_image"].call_count == 1
@@ -140,15 +140,15 @@ def test_build_image_with_relative_model_path_calls_expected_azure_routines(
 @mock.patch("mlflow.azureml.mlflow_version", "0.7.0")
 def test_build_image_with_runs_uri_calls_expected_azure_routines(sklearn_model):
     artifact_path = "model"
-    with mlflow.start_run():
-        mlflow.sklearn.log_model(sk_model=sklearn_model, artifact_path=artifact_path)
-        run_id = mlflow.active_run().info.run_id
+    with kiwi.start_run():
+        kiwi.sklearn.log_model(sk_model=sklearn_model, artifact_path=artifact_path)
+        run_id = kiwi.active_run().info.run_id
 
     with AzureMLMocks() as aml_mocks:
         workspace = get_azure_workspace()
         model_uri = "runs:///{run_id}/{artifact_path}".format(
             run_id=run_id, artifact_path=artifact_path)
-        mlflow.azureml.build_image(model_uri=model_uri, workspace=workspace)
+        kiwi.azureml.build_image(model_uri=model_uri, workspace=workspace)
 
         assert aml_mocks["register_model"].call_count == 1
         assert aml_mocks["create_image"].call_count == 1
@@ -158,7 +158,7 @@ def test_build_image_with_runs_uri_calls_expected_azure_routines(sklearn_model):
 @mock.patch("mlflow.azureml.mlflow_version", "0.7.0")
 def test_build_image_with_remote_uri_calls_expected_azure_routines(
         sklearn_model, model_path, mock_s3_bucket):
-    mlflow.sklearn.save_model(sk_model=sklearn_model, path=model_path)
+    kiwi.sklearn.save_model(sk_model=sklearn_model, path=model_path)
     artifact_path = "model"
     artifact_root = "s3://{bucket_name}".format(bucket_name=mock_s3_bucket)
     s3_artifact_repo = S3ArtifactRepository(artifact_root)
@@ -167,7 +167,7 @@ def test_build_image_with_remote_uri_calls_expected_azure_routines(
 
     with AzureMLMocks() as aml_mocks:
         workspace = get_azure_workspace()
-        mlflow.azureml.build_image(model_uri=model_uri, workspace=workspace)
+        kiwi.azureml.build_image(model_uri=model_uri, workspace=workspace)
 
         assert aml_mocks["register_model"].call_count == 1
         assert aml_mocks["create_image"].call_count == 1
@@ -176,10 +176,10 @@ def test_build_image_with_remote_uri_calls_expected_azure_routines(
 @pytest.mark.large
 @mock.patch("mlflow.azureml.mlflow_version", "0.7.0")
 def test_synchronous_build_image_awaits_azure_image_creation(sklearn_model, model_path):
-    mlflow.sklearn.save_model(sk_model=sklearn_model, path=model_path)
+    kiwi.sklearn.save_model(sk_model=sklearn_model, path=model_path)
     with AzureMLMocks():
         workspace = get_azure_workspace()
-        image, _ = mlflow.azureml.build_image(
+        image, _ = kiwi.azureml.build_image(
             model_uri=model_path, workspace=workspace, synchronous=True)
         image.wait_for_creation.assert_called_once()
 
@@ -187,10 +187,10 @@ def test_synchronous_build_image_awaits_azure_image_creation(sklearn_model, mode
 @pytest.mark.large
 @mock.patch("mlflow.azureml.mlflow_version", "0.7.0")
 def test_asynchronous_build_image_does_not_await_azure_image_creation(sklearn_model, model_path):
-    mlflow.sklearn.save_model(sk_model=sklearn_model, path=model_path)
+    kiwi.sklearn.save_model(sk_model=sklearn_model, path=model_path)
     with AzureMLMocks():
         workspace = get_azure_workspace()
-        image, _ = mlflow.azureml.build_image(
+        image, _ = kiwi.azureml.build_image(
             model_uri=model_path, workspace=workspace, synchronous=False)
         image.wait_for_creation.assert_not_called()
 
@@ -199,12 +199,12 @@ def test_asynchronous_build_image_does_not_await_azure_image_creation(sklearn_mo
 @mock.patch("mlflow.azureml.mlflow_version", "0.7.0")
 def test_build_image_registers_model_and_creates_image_with_specified_names(
         sklearn_model, model_path):
-    mlflow.sklearn.save_model(sk_model=sklearn_model, path=model_path)
+    kiwi.sklearn.save_model(sk_model=sklearn_model, path=model_path)
     with AzureMLMocks() as aml_mocks:
         workspace = get_azure_workspace()
         model_name = "MODEL_NAME_1"
         image_name = "IMAGE_NAME_1"
-        mlflow.azureml.build_image(
+        kiwi.azureml.build_image(
             model_uri=model_path, workspace=workspace, model_name=model_name,
             image_name=image_name)
 
@@ -225,10 +225,10 @@ def test_build_image_generates_model_and_image_names_meeting_azureml_resource_na
         sklearn_model, model_path):
     aml_resource_name_max_length = 32
 
-    mlflow.sklearn.save_model(sk_model=sklearn_model, path=model_path)
+    kiwi.sklearn.save_model(sk_model=sklearn_model, path=model_path)
     with AzureMLMocks() as aml_mocks:
         workspace = get_azure_workspace()
-        mlflow.azureml.build_image(model_uri=model_path, workspace=workspace)
+        kiwi.azureml.build_image(model_uri=model_path, workspace=workspace)
 
         register_model_call_args = aml_mocks["register_model"].call_args_list
         assert len(register_model_call_args) == 1
@@ -257,8 +257,8 @@ def test_build_image_passes_model_conda_environment_to_azure_image_creation_rout
         with open(sklearn_conda_env_path, "w") as f:
             f.write(sklearn_conda_env_text)
 
-        mlflow.sklearn.save_model(sk_model=sklearn_model, path=model_path,
-                                  conda_env=sklearn_conda_env_path)
+        kiwi.sklearn.save_model(sk_model=sklearn_model, path=model_path,
+                                conda_env=sklearn_conda_env_path)
 
         # Mock the TempDir.__exit__ function to ensure that the enclosing temporary
         # directory is not deleted
@@ -272,7 +272,7 @@ def test_build_image_passes_model_conda_environment_to_azure_image_creation_rout
             tmpdir_path_mock.side_effect = get_mock_path
 
             workspace = get_azure_workspace()
-            mlflow.azureml.build_image(model_uri=model_path, workspace=workspace)
+            kiwi.azureml.build_image(model_uri=model_path, workspace=workspace)
 
             create_image_call_args = aml_mocks["create_image"].call_args_list
             assert len(create_image_call_args) == 1
@@ -287,9 +287,9 @@ def test_build_image_passes_model_conda_environment_to_azure_image_creation_rout
 @mock.patch("mlflow.azureml.mlflow_version", "0.7.0")
 def test_build_image_includes_default_metadata_in_azure_image_and_model_tags(sklearn_model):
     artifact_path = "model"
-    with mlflow.start_run():
-        mlflow.sklearn.log_model(sk_model=sklearn_model, artifact_path=artifact_path)
-        run_id = mlflow.active_run().info.run_id
+    with kiwi.start_run():
+        kiwi.sklearn.log_model(sk_model=sklearn_model, artifact_path=artifact_path)
+        run_id = kiwi.active_run().info.run_id
     model_uri = "runs:///{run_id}/{artifact_path}".format(
         run_id=run_id, artifact_path=artifact_path)
     model_config = Model.load(
@@ -297,7 +297,7 @@ def test_build_image_includes_default_metadata_in_azure_image_and_model_tags(skl
 
     with AzureMLMocks() as aml_mocks:
         workspace = get_azure_workspace()
-        mlflow.azureml.build_image(model_uri=model_uri, workspace=workspace)
+        kiwi.azureml.build_image(model_uri=model_uri, workspace=workspace)
 
         register_model_call_args = aml_mocks["register_model"].call_args_list
         assert len(register_model_call_args) == 1
@@ -326,10 +326,10 @@ def test_build_image_includes_user_specified_tags_in_azure_image_and_model_tags(
         "Other": "Entry",
     }
 
-    mlflow.sklearn.save_model(sk_model=sklearn_model, path=model_path)
+    kiwi.sklearn.save_model(sk_model=sklearn_model, path=model_path)
     with AzureMLMocks() as aml_mocks:
         workspace = get_azure_workspace()
-        mlflow.azureml.build_image(model_uri=model_path, workspace=workspace, tags=custom_tags)
+        kiwi.azureml.build_image(model_uri=model_path, workspace=workspace, tags=custom_tags)
 
         register_model_call_args = aml_mocks["register_model"].call_args_list
         assert len(register_model_call_args) == 1
@@ -354,10 +354,10 @@ def test_deploy_includes_tags_in_azure_deployment_and_model_tags(
         "Other": "Entry",
     }
 
-    mlflow.sklearn.save_model(sk_model=sklearn_model, path=model_path)
+    kiwi.sklearn.save_model(sk_model=sklearn_model, path=model_path)
     with AzureMLMocks() as aml_mocks:
         workspace = get_azure_workspace()
-        mlflow.azureml.deploy(model_uri=model_path, workspace=workspace, tags=custom_tags)
+        kiwi.azureml.deploy(model_uri=model_path, workspace=workspace, tags=custom_tags)
 
         register_model_call_args = aml_mocks["register_model"].call_args_list
         assert len(register_model_call_args) == 1
@@ -378,10 +378,10 @@ def test_build_image_includes_user_specified_description_in_azure_image_and_mode
         sklearn_model, model_path):
     custom_description = "a custom description"
 
-    mlflow.sklearn.save_model(sk_model=sklearn_model, path=model_path)
+    kiwi.sklearn.save_model(sk_model=sklearn_model, path=model_path)
     with AzureMLMocks() as aml_mocks:
         workspace = get_azure_workspace()
-        mlflow.azureml.build_image(
+        kiwi.azureml.build_image(
             model_uri=model_path, workspace=workspace, description=custom_description)
 
         register_model_call_args = aml_mocks["register_model"].call_args_list
@@ -400,7 +400,7 @@ def test_build_image_includes_user_specified_description_in_azure_image_and_mode
 @mock.patch("mlflow.azureml.mlflow_version", "0.7.0")
 def test_build_image_throws_exception_if_model_does_not_contain_pyfunc_flavor(
         sklearn_model, model_path):
-    mlflow.sklearn.save_model(sk_model=sklearn_model, path=model_path)
+    kiwi.sklearn.save_model(sk_model=sklearn_model, path=model_path)
     model_config_path = os.path.join(model_path, "MLmodel")
     model_config = Model.load(model_config_path)
     del model_config.flavors[pyfunc.FLAVOR_NAME]
@@ -408,7 +408,7 @@ def test_build_image_throws_exception_if_model_does_not_contain_pyfunc_flavor(
 
     with AzureMLMocks(), pytest.raises(MlflowException) as exc:
         workspace = get_azure_workspace()
-        mlflow.azureml.build_image(model_uri=model_path, workspace=workspace)
+        kiwi.azureml.build_image(model_uri=model_path, workspace=workspace)
         assert exc.error_code == INVALID_PARAMETER_VALUE
 
 
@@ -416,7 +416,7 @@ def test_build_image_throws_exception_if_model_does_not_contain_pyfunc_flavor(
 @mock.patch("mlflow.azureml.mlflow_version", "0.7.0")
 def test_build_image_throws_exception_if_model_python_version_is_less_than_three(
         sklearn_model, model_path):
-    mlflow.sklearn.save_model(sk_model=sklearn_model, path=model_path)
+    kiwi.sklearn.save_model(sk_model=sklearn_model, path=model_path)
     model_config_path = os.path.join(model_path, "MLmodel")
     model_config = Model.load(model_config_path)
     model_config.flavors[pyfunc.FLAVOR_NAME][pyfunc.PY_VERSION] = "2.7.6"
@@ -424,7 +424,7 @@ def test_build_image_throws_exception_if_model_python_version_is_less_than_three
 
     with AzureMLMocks(), pytest.raises(MlflowException) as exc:
         workspace = get_azure_workspace()
-        mlflow.azureml.build_image(model_uri=model_path, workspace=workspace)
+        kiwi.azureml.build_image(model_uri=model_path, workspace=workspace)
         assert exc.error_code == INVALID_PARAMETER_VALUE
 
 
@@ -437,7 +437,7 @@ def test_build_image_includes_mlflow_home_as_file_dependency_if_specified(
         with open(output_path, "w") as f:
             f.write("Dockerfile contents")
 
-    mlflow.sklearn.save_model(sk_model=sklearn_model, path=model_path)
+    kiwi.sklearn.save_model(sk_model=sklearn_model, path=model_path)
     with AzureMLMocks() as aml_mocks, TempDir() as tmp,\
             mock.patch("mlflow.azureml._create_dockerfile") as create_dockerfile_mock:
         create_dockerfile_mock.side_effect = mock_create_dockerfile
@@ -449,7 +449,7 @@ def test_build_image_includes_mlflow_home_as_file_dependency_if_specified(
             f.write("setup instructions")
 
         workspace = get_azure_workspace()
-        mlflow.azureml.build_image(
+        kiwi.azureml.build_image(
             model_uri=model_path, workspace=workspace, mlflow_home=mlflow_home)
 
         assert len(create_dockerfile_mock.call_args_list) == 1
@@ -469,7 +469,7 @@ def test_build_image_includes_mlflow_home_as_file_dependency_if_specified(
 @pytest.mark.large
 def test_execution_script_init_method_attempts_to_load_correct_azure_ml_model(
         sklearn_model, model_path):
-    mlflow.sklearn.save_model(sk_model=sklearn_model, path=model_path)
+    kiwi.sklearn.save_model(sk_model=sklearn_model, path=model_path)
 
     model_name = "test_model_name"
     model_version = 1
@@ -480,7 +480,7 @@ def test_execution_script_init_method_attempts_to_load_correct_azure_ml_model(
 
     with TempDir() as tmp:
         execution_script_path = tmp.path("dest")
-        mlflow.azureml._create_execution_script(
+        kiwi.azureml._create_execution_script(
             output_path=execution_script_path, azure_model=model_mock)
 
         with open(execution_script_path, "r") as f:
@@ -512,9 +512,9 @@ def test_execution_script_init_method_attempts_to_load_correct_azure_ml_model(
 @pytest.mark.large
 def test_execution_script_run_method_scores_pandas_dfs_successfully_when_model_outputs_numpy_arrays(
         sklearn_model, sklearn_data, model_path):
-    mlflow.sklearn.save_model(sk_model=sklearn_model, path=model_path)
+    kiwi.sklearn.save_model(sk_model=sklearn_model, path=model_path)
 
-    pyfunc_model = mlflow.pyfunc.load_pyfunc(model_uri=model_path)
+    pyfunc_model = kiwi.pyfunc.load_pyfunc(model_uri=model_path)
     pyfunc_outputs = pyfunc_model.predict(sklearn_data[0])
     assert isinstance(pyfunc_outputs, np.ndarray)
 
@@ -524,7 +524,7 @@ def test_execution_script_run_method_scores_pandas_dfs_successfully_when_model_o
 
     with TempDir() as tmp:
         execution_script_path = tmp.path("dest")
-        mlflow.azureml._create_execution_script(
+        kiwi.azureml._create_execution_script(
             output_path=execution_script_path, azure_model=model_mock)
 
         with open(execution_script_path, "r") as f:
@@ -556,8 +556,8 @@ def test_execution_script_run_method_scores_pandas_dfs_successfully_when_model_o
 @pytest.mark.large
 def test_execution_script_run_method_scores_pandas_dfs_successfully_when_model_outputs_pandas_dfs(
         keras_model, keras_data, model_path):
-    mlflow.keras.save_model(keras_model=keras_model, path=model_path)
-    pyfunc_model = mlflow.pyfunc.load_pyfunc(model_uri=model_path)
+    kiwi.keras.save_model(keras_model=keras_model, path=model_path)
+    pyfunc_model = kiwi.pyfunc.load_pyfunc(model_uri=model_path)
     pyfunc_outputs = pyfunc_model.predict(keras_data[0])
     assert isinstance(pyfunc_outputs, pd.DataFrame)
 
@@ -567,7 +567,7 @@ def test_execution_script_run_method_scores_pandas_dfs_successfully_when_model_o
 
     with TempDir() as tmp:
         execution_script_path = tmp.path("dest")
-        mlflow.azureml._create_execution_script(
+        kiwi.azureml._create_execution_script(
             output_path=execution_script_path, azure_model=model_mock)
 
         with open(execution_script_path, "r") as f:
@@ -605,10 +605,10 @@ def test_execution_script_run_method_scores_pandas_dfs_successfully_when_model_o
 @mock.patch("mlflow.azureml.mlflow_version", "0.7.0")
 def test_cli_build_image_with_absolute_model_path_calls_expected_azure_routines(
         sklearn_model, model_path):
-    mlflow.sklearn.save_model(sk_model=sklearn_model, path=model_path)
+    kiwi.sklearn.save_model(sk_model=sklearn_model, path=model_path)
     with AzureMLMocks() as aml_mocks:
         result = CliRunner(env={"LC_ALL": "en_US.UTF-8", "LANG": "en_US.UTF-8"}).invoke(
-            mlflow.azureml.cli.commands,
+            kiwi.azureml.cli.commands,
             [
                 'build-image',
                 '-m', model_path,
@@ -628,11 +628,11 @@ def test_cli_build_image_with_absolute_model_path_calls_expected_azure_routines(
 def test_cli_build_image_with_relative_model_path_calls_expected_azure_routines(sklearn_model):
     with TempDir(chdr=True):
         model_path = "model"
-        mlflow.sklearn.save_model(sk_model=sklearn_model, path=model_path)
+        kiwi.sklearn.save_model(sk_model=sklearn_model, path=model_path)
 
         with AzureMLMocks() as aml_mocks:
             result = CliRunner(env={"LC_ALL": "en_US.UTF-8", "LANG": "en_US.UTF-8"}).invoke(
-                mlflow.azureml.cli.commands,
+                kiwi.azureml.cli.commands,
                 [
                     'build-image',
                     '-m', model_path,
@@ -651,15 +651,15 @@ def test_cli_build_image_with_relative_model_path_calls_expected_azure_routines(
 @mock.patch("mlflow.azureml.mlflow_version", "0.7.0")
 def test_cli_build_image_with_runs_uri_calls_expected_azure_routines(sklearn_model):
     artifact_path = "model"
-    with mlflow.start_run():
-        mlflow.sklearn.log_model(sk_model=sklearn_model, artifact_path=artifact_path)
-        run_id = mlflow.active_run().info.run_id
+    with kiwi.start_run():
+        kiwi.sklearn.log_model(sk_model=sklearn_model, artifact_path=artifact_path)
+        run_id = kiwi.active_run().info.run_id
     model_uri = "runs:/{run_id}/{artifact_path}".format(
         run_id=run_id, artifact_path=artifact_path)
 
     with AzureMLMocks() as aml_mocks:
         result = CliRunner(env={"LC_ALL": "en_US.UTF-8", "LANG": "en_US.UTF-8"}).invoke(
-            mlflow.azureml.cli.commands,
+            kiwi.azureml.cli.commands,
             [
                 'build-image',
                 '-m', model_uri,
@@ -678,7 +678,7 @@ def test_cli_build_image_with_runs_uri_calls_expected_azure_routines(sklearn_mod
 @mock.patch("mlflow.azureml.mlflow_version", "0.7.0")
 def test_cli_build_image_with_remote_uri_calls_expected_azure_routines(
         sklearn_model, model_path, mock_s3_bucket):
-    mlflow.sklearn.save_model(sk_model=sklearn_model, path=model_path)
+    kiwi.sklearn.save_model(sk_model=sklearn_model, path=model_path)
     artifact_path = "model"
     artifact_root = "s3://{bucket_name}".format(bucket_name=mock_s3_bucket)
     s3_artifact_repo = S3ArtifactRepository(artifact_root)
@@ -687,7 +687,7 @@ def test_cli_build_image_with_remote_uri_calls_expected_azure_routines(
 
     with AzureMLMocks() as aml_mocks:
         result = CliRunner(env={"LC_ALL": "en_US.UTF-8", "LANG": "en_US.UTF-8"}).invoke(
-            mlflow.azureml.cli.commands,
+            kiwi.azureml.cli.commands,
             [
                 'build-image',
                 '-m', model_uri,
@@ -712,11 +712,11 @@ def test_cli_build_image_parses_and_includes_user_specified_tags_in_azureml_imag
         "Other": "Entry",
     }
 
-    mlflow.sklearn.save_model(sk_model=sklearn_model, path=model_path)
+    kiwi.sklearn.save_model(sk_model=sklearn_model, path=model_path)
 
     with AzureMLMocks() as aml_mocks:
         result = CliRunner(env={"LC_ALL": "en_US.UTF-8", "LANG": "en_US.UTF-8"}).invoke(
-            mlflow.azureml.cli.commands,
+            kiwi.azureml.cli.commands,
             [
                 'build-image',
                 '-m', model_path,

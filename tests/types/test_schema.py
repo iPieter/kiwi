@@ -4,10 +4,10 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from mlflow.exceptions import MlflowException
-from mlflow.types import DataType
-from mlflow.types.schema import ColSpec, Schema
-from mlflow.types.utils import _infer_schema
+from kiwi.exceptions import MlflowException
+from kiwi.types import DataType
+from kiwi.types.schema import ColSpec, Schema
+from kiwi.types.utils import _infer_schema
 
 
 def test_col_spec():

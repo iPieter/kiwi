@@ -2,12 +2,12 @@ import mock
 import pytest
 from six.moves import reload_module as reload
 
-import mlflow.tracking.context.registry
-from mlflow.tracking.context.default_context import DefaultRunContext
-from mlflow.tracking.context.git_context import GitRunContext
-from mlflow.tracking.context.databricks_notebook_context import DatabricksNotebookRunContext
-from mlflow.tracking.context.databricks_job_context import DatabricksJobRunContext
-from mlflow.tracking.context.registry import RunContextProviderRegistry, resolve_tags
+import kiwi.tracking.context.registry
+from kiwi.tracking.context.default_context import DefaultRunContext
+from kiwi.tracking.context.git_context import GitRunContext
+from kiwi.tracking.context.databricks_notebook_context import DatabricksNotebookRunContext
+from kiwi.tracking.context.databricks_job_context import DatabricksJobRunContext
+from kiwi.tracking.context.registry import RunContextProviderRegistry, resolve_tags
 
 # pylint: disable=unused-argument
 
@@ -58,7 +58,7 @@ def test_run_context_provider_registry_register_entrypoints_handles_exception(ex
 def _currently_registered_run_context_provider_classes():
     return {
         provider.__class__
-        for provider in mlflow.tracking.context.registry._run_context_provider_registry
+        for provider in kiwi.tracking.context.registry._run_context_provider_registry
     }
 
 
@@ -82,7 +82,7 @@ def test_registry_instance_loads_entrypoints():
     ) as mock_get_group_all:
         # Entrypoints are registered at import time, so we need to reload the module to register th
         # entrypoint given by the mocked extrypoints.get_group_all
-        reload(mlflow.tracking.context.registry)
+        reload(kiwi.tracking.context.registry)
 
     assert MockRunContext in _currently_registered_run_context_provider_classes()
     mock_get_group_all.assert_called_once_with("mlflow.run_context_provider")
@@ -92,7 +92,7 @@ def test_registry_instance_loads_entrypoints():
 def test_run_context_provider_registry_with_installed_plugin(tmp_wkdir):
     """This test requires the package in tests/resources/mlflow-test-plugin to be installed"""
 
-    reload(mlflow.tracking.context.registry)
+    reload(kiwi.tracking.context.registry)
 
     from mlflow_test_plugin.run_context_provider import PluginRunContextProvider
     assert PluginRunContextProvider in _currently_registered_run_context_provider_classes()

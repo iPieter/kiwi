@@ -1,6 +1,6 @@
 from six.moves import urllib
 
-from mlflow.store.tracking.file_store import FileStore
+from kiwi.store.tracking.file_store import FileStore
 
 
 class PluginFileStore(FileStore):

@@ -4,10 +4,10 @@ import os.path
 import re
 import shutil
 
-import mlflow
-from mlflow import cli
-from mlflow.utils import process
-from mlflow.utils.file_utils import path_to_local_file_uri
+import kiwi
+from kiwi import cli
+from kiwi.utils import process
+from kiwi.utils.file_utils import path_to_local_file_uri
 from tests.integration.utils import invoke_cli_runner
 import pytest
 
@@ -26,7 +26,7 @@ def find_conda_yaml(directory):
 def replace_mlflow_with_dev_version(yml_path):
     with open(yml_path, 'r') as f:
         old_src = f.read()
-        mlflow_dir = os.path.dirname(mlflow.__path__[0])
+        mlflow_dir = os.path.dirname(kiwi.__path__[0])
         new_src = re.sub(r"- mlflow.*\n", "- {}\n".format(mlflow_dir), old_src)
 
     with open(yml_path, 'w') as f:

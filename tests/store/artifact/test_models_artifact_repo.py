@@ -2,11 +2,11 @@ import mock
 import pytest
 from mock import Mock
 
-from mlflow.entities.model_registry import ModelVersion
-from mlflow.exceptions import MlflowException
-from mlflow.store.artifact.dbfs_artifact_repo import DbfsRestArtifactRepository
-from mlflow.store.artifact.models_artifact_repo import ModelsArtifactRepository
-from mlflow.tracking import MlflowClient
+from kiwi.entities.model_registry import ModelVersion
+from kiwi.exceptions import MlflowException
+from kiwi.store.artifact.dbfs_artifact_repo import DbfsRestArtifactRepository
+from kiwi.store.artifact.models_artifact_repo import ModelsArtifactRepository
+from kiwi.tracking import MlflowClient
 
 # pylint: disable=unused-import
 from tests.store.artifact.test_dbfs_artifact_repo_delegation import host_creds_mock

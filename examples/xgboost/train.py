@@ -7,8 +7,8 @@ import xgboost as xgb
 import matplotlib as mpl
 
 
-import mlflow
-import mlflow.xgboost
+import kiwi
+import kiwi.xgboost
 
 mpl.use('Agg')
 
@@ -37,9 +37,9 @@ def main():
     dtest = xgb.DMatrix(X_test, label=y_test)
 
     # enable auto logging
-    mlflow.xgboost.autolog()
+    kiwi.xgboost.autolog()
 
-    with mlflow.start_run():
+    with kiwi.start_run():
 
         # train model
         params = {
@@ -60,7 +60,7 @@ def main():
         acc = accuracy_score(y_test, y_pred)
 
         # log metrics
-        mlflow.log_metrics({'log_loss': loss, 'accuracy': acc})
+        kiwi.log_metrics({'log_loss': loss, 'accuracy': acc})
 
 
 if __name__ == '__main__':

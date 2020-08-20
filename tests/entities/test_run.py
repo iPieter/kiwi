@@ -1,7 +1,7 @@
 import pytest
 
-from mlflow.entities import Run, Metric, RunData, RunStatus, RunInfo, LifecycleStage
-from mlflow.exceptions import MlflowException
+from kiwi.entities import Run, Metric, RunData, RunStatus, RunInfo, LifecycleStage
+from kiwi.exceptions import MlflowException
 from tests.entities.test_run_data import TestRunData
 from tests.entities.test_run_info import TestRunInfo
 

@@ -4,7 +4,7 @@ Converts the raw CSV form to a Parquet form with just the columns we want
 import tempfile
 import os
 import pyspark
-import mlflow
+import kiwi
 import click
 
 
@@ -14,7 +14,7 @@ import click
 @click.option("--max-row-limit", default=10000,
               help="Limit the data size to run comfortably on a laptop.")
 def etl_data(ratings_csv, max_row_limit):
-    with mlflow.start_run() as mlrun:
+    with kiwi.start_run() as mlrun:
         tmpdir = tempfile.mkdtemp()
         ratings_parquet_dir = os.path.join(tmpdir, 'ratings-parquet')
         spark = pyspark.sql.SparkSession.builder.getOrCreate()
@@ -29,7 +29,7 @@ def etl_data(ratings_csv, max_row_limit):
             ratings_df = ratings_df.limit(max_row_limit)
         ratings_df.write.parquet(ratings_parquet_dir)
         print("Uploading Parquet ratings: %s" % ratings_parquet_dir)
-        mlflow.log_artifacts(ratings_parquet_dir, "ratings-parquet-dir")
+        kiwi.log_artifacts(ratings_parquet_dir, "ratings-parquet-dir")
 
 
 if __name__ == '__main__':

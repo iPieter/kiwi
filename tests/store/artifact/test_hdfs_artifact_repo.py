@@ -7,10 +7,10 @@ import pytest
 from mock import call, mock_open
 from pyarrow import HadoopFileSystem
 
-from mlflow.entities import FileInfo
-from mlflow.store.artifact.hdfs_artifact_repo import HdfsArtifactRepository, _resolve_base_path, \
+from kiwi.entities import FileInfo
+from kiwi.store.artifact.hdfs_artifact_repo import HdfsArtifactRepository, _resolve_base_path, \
     _relative_path_remote, _parse_extra_conf, _download_hdfs_file
-from mlflow.utils.file_utils import TempDir
+from kiwi.utils.file_utils import TempDir
 
 
 @mock.patch('pyarrow.hdfs.HadoopFileSystem')

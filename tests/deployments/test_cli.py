@@ -1,5 +1,5 @@
 from click.testing import CliRunner
-from mlflow.deployments import cli
+from kiwi.deployments import cli
 
 
 f_model_uri = 'fake_model_uri'

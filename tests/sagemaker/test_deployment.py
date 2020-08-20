@@ -10,17 +10,17 @@ import numpy as np
 from click.testing import CliRunner
 from sklearn.linear_model import LogisticRegression
 
-import mlflow
-import mlflow.pyfunc
-import mlflow.sklearn
-import mlflow.sagemaker as mfs
-import mlflow.sagemaker.cli as mfscli
-from mlflow.exceptions import MlflowException
-from mlflow.models import Model
-from mlflow.protos.databricks_pb2 import ErrorCode, RESOURCE_DOES_NOT_EXIST, \
+import kiwi
+import kiwi.pyfunc
+import kiwi.sklearn
+import kiwi.sagemaker as mfs
+import kiwi.sagemaker.cli as mfscli
+from kiwi.exceptions import MlflowException
+from kiwi.models import Model
+from kiwi.protos.databricks_pb2 import ErrorCode, RESOURCE_DOES_NOT_EXIST, \
     INVALID_PARAMETER_VALUE, INTERNAL_ERROR
-from mlflow.store.artifact.s3_artifact_repo import S3ArtifactRepository
-from mlflow.tracking.artifact_utils import _download_artifact_from_uri
+from kiwi.store.artifact.s3_artifact_repo import S3ArtifactRepository
+from kiwi.tracking.artifact_utils import _download_artifact_from_uri
 
 from tests.helper_functions import set_boto_credentials  # pylint: disable=unused-import
 from tests.sagemaker.mock import mock_sagemaker, Endpoint, EndpointOperation
@@ -31,13 +31,13 @@ TrainedModel = namedtuple("TrainedModel", ["model_path", "run_id", "model_uri"])
 @pytest.fixture
 def pretrained_model():
     model_path = "model"
-    with mlflow.start_run():
+    with kiwi.start_run():
         X = np.array([-2, -1, 0, 1, 2, 1]).reshape(-1, 1)
         y = np.array([0, 0, 1, 1, 1, 0])
         lr = LogisticRegression(solver='lbfgs')
         lr.fit(X, y)
-        mlflow.sklearn.log_model(lr, model_path)
-        run_id = mlflow.active_run().info.run_id
+        kiwi.sklearn.log_model(lr, model_path)
+        run_id = kiwi.active_run().info.run_id
         model_uri = "runs:/" + run_id + "/" + model_path
         return TrainedModel(model_path, run_id, model_uri)
 
@@ -117,7 +117,7 @@ def test_deployment_of_model_with_no_supported_flavors_raises_exception(pretrain
     logged_model_path = _download_artifact_from_uri(pretrained_model.model_uri)
     model_config_path = os.path.join(logged_model_path, "MLmodel")
     model_config = Model.load(model_config_path)
-    del model_config.flavors[mlflow.pyfunc.FLAVOR_NAME]
+    del model_config.flavors[kiwi.pyfunc.FLAVOR_NAME]
     model_config.save(path=model_config_path)
 
     with pytest.raises(MlflowException) as exc:
@@ -135,7 +135,7 @@ def test_validate_deployment_flavor_validates_python_function_flavor_successfull
         _download_artifact_from_uri(pretrained_model.model_uri), "MLmodel")
     model_config = Model.load(model_config_path)
     mfs._validate_deployment_flavor(
-            model_config=model_config, flavor=mlflow.pyfunc.FLAVOR_NAME)
+            model_config=model_config, flavor=kiwi.pyfunc.FLAVOR_NAME)
 
 
 @pytest.mark.large
@@ -611,12 +611,12 @@ def test_deploy_in_replace_mode_with_archiving_does_not_delete_resources(
 
     model_uri = "runs:/{run_id}/{artifact_path}".format(
         run_id=pretrained_model.run_id, artifact_path=pretrained_model.model_path)
-    sk_model = mlflow.sklearn.load_model(model_uri=model_uri)
+    sk_model = kiwi.sklearn.load_model(model_uri=model_uri)
     new_artifact_path = "model"
-    with mlflow.start_run():
-        mlflow.sklearn.log_model(sk_model=sk_model, artifact_path=new_artifact_path)
+    with kiwi.start_run():
+        kiwi.sklearn.log_model(sk_model=sk_model, artifact_path=new_artifact_path)
         new_model_uri = "runs:/{run_id}/{artifact_path}".format(
-            run_id=mlflow.active_run().info.run_id, artifact_path=new_artifact_path)
+            run_id=kiwi.active_run().info.run_id, artifact_path=new_artifact_path)
     mfs.deploy(app_name=app_name,
                model_uri=new_model_uri,
                mode=mfs.DEPLOYMENT_MODE_REPLACE,

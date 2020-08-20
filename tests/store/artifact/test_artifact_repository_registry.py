@@ -2,9 +2,9 @@ import mock
 import pytest
 from six.moves import reload_module as reload
 
-import mlflow
-from mlflow.store.artifact import artifact_repository_registry
-from mlflow.store.artifact.artifact_repository_registry import ArtifactRepositoryRegistry
+import kiwi
+from kiwi.store.artifact import artifact_repository_registry
+from kiwi.store.artifact.artifact_repository_registry import ArtifactRepositoryRegistry
 
 
 def test_standard_artifact_registry():
@@ -73,7 +73,7 @@ def test_plugin_registration():
 def test_get_unknown_scheme():
     artifact_repository_registry = ArtifactRepositoryRegistry()
 
-    with pytest.raises(mlflow.exceptions.MlflowException,
+    with pytest.raises(kiwi.exceptions.MlflowException,
                        match="Could not find a registered artifact repository"):
         artifact_repository_registry.get_artifact_repository("unknown-scheme://")
 

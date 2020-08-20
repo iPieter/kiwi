@@ -6,9 +6,9 @@ import pytest
 from azure.storage.blob import BlobServiceClient
 from azure.storage.blob._models import BlobPrefix, BlobProperties
 
-from mlflow.exceptions import MlflowException
-from mlflow.store.artifact.artifact_repository_registry import get_artifact_repository
-from mlflow.store.artifact.azure_blob_artifact_repo import AzureBlobArtifactRepository
+from kiwi.exceptions import MlflowException
+from kiwi.store.artifact.artifact_repository_registry import get_artifact_repository
+from kiwi.store.artifact.azure_blob_artifact_repo import AzureBlobArtifactRepository
 
 
 TEST_ROOT_PATH = "some/path"

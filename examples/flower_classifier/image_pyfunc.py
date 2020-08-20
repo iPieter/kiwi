@@ -14,11 +14,11 @@ import pip
 import yaml
 import tensorflow as tf
 
-import mlflow
-import mlflow.keras
-from mlflow.utils import PYTHON_VERSION
-from mlflow.utils.file_utils import TempDir
-from mlflow.utils.environment import _mlflow_conda_env
+import kiwi
+import kiwi.keras
+from kiwi.utils import PYTHON_VERSION
+from kiwi.utils.file_utils import TempDir
+from kiwi.utils.environment import _mlflow_conda_env
 
 
 def decode_and_resize_image(raw_bytes, size):
@@ -122,7 +122,7 @@ def log_model(keras_model, artifact_path, image_dims, domain):
         with open(os.path.join(data_path, "conf.yaml"), "w") as f:
             yaml.safe_dump(conf, stream=f)
         keras_path = os.path.join(data_path, "keras_model")
-        mlflow.keras.save_model(keras_model, path=keras_path)
+        kiwi.keras.save_model(keras_model, path=keras_path)
         conda_env = tmp.path("conda_env.yaml")
         with open(conda_env, "w") as f:
             f.write(conda_env_template.format(python_version=PYTHON_VERSION,
@@ -132,11 +132,11 @@ def log_model(keras_model, artifact_path, image_dims, domain):
                                               pip_version=pip.__version__,
                                               pillow_version=PIL.__version__))
 
-        mlflow.pyfunc.log_model(artifact_path=artifact_path,
-                                loader_module=__name__,
-                                code_path=[__file__],
-                                data_path=data_path,
-                                conda_env=conda_env)
+        kiwi.pyfunc.log_model(artifact_path=artifact_path,
+                              loader_module=__name__,
+                              code_path=[__file__],
+                              data_path=data_path,
+                              conda_env=conda_env)
 
 
 def _load_pyfunc(path):
@@ -154,7 +154,7 @@ def _load_pyfunc(path):
     with tf.Graph().as_default() as g:
         with tf.Session().as_default() as sess:
             keras.backend.set_session(sess)
-            keras_model = mlflow.keras.load_model(keras_model_path)
+            keras_model = kiwi.keras.load_model(keras_model_path)
     return KerasImageClassifierPyfunc(g, sess, keras_model, image_dims, domain=domain)
 
 

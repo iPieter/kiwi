@@ -1,9 +1,9 @@
 import mock
 
-from mlflow.entities import SourceType
-from mlflow.utils.mlflow_tags import MLFLOW_SOURCE_NAME, MLFLOW_SOURCE_TYPE, \
+from kiwi.entities import SourceType
+from kiwi.utils.mlflow_tags import MLFLOW_SOURCE_NAME, MLFLOW_SOURCE_TYPE, \
     MLFLOW_DATABRICKS_NOTEBOOK_ID, MLFLOW_DATABRICKS_NOTEBOOK_PATH, MLFLOW_DATABRICKS_WEBAPP_URL
-from mlflow.tracking.context.databricks_notebook_context import DatabricksNotebookRunContext
+from kiwi.tracking.context.databricks_notebook_context import DatabricksNotebookRunContext
 
 
 def test_databricks_notebook_run_context_in_context():

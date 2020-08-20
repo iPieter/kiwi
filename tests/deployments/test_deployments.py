@@ -1,8 +1,8 @@
 import pytest
 import os
-from mlflow import deployments
-from mlflow.deployments.plugin_manager import DeploymentPlugins
-from mlflow.exceptions import MlflowException
+from kiwi import deployments
+from kiwi.deployments.plugin_manager import DeploymentPlugins
+from kiwi.exceptions import MlflowException
 
 
 f_model_uri = 'fake_model_uri'

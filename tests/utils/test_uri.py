@@ -1,9 +1,9 @@
 import posixpath
 import pytest
 
-from mlflow.exceptions import MlflowException
-from mlflow.store.db.db_types import DATABASE_ENGINES
-from mlflow.utils.uri import is_databricks_uri, is_http_uri, is_local_uri, \
+from kiwi.exceptions import MlflowException
+from kiwi.store.db.db_types import DATABASE_ENGINES
+from kiwi.utils.uri import is_databricks_uri, is_http_uri, is_local_uri, \
     extract_db_type_from_uri, get_uri_scheme, append_to_uri_path, \
     extract_and_normalize_path, is_databricks_acled_artifacts_uri, \
     get_db_info_from_uri

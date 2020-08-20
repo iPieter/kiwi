@@ -1,15 +1,15 @@
 import mock
 import pytest
 
-from mlflow import register_model, set_registry_uri, get_registry_uri
-from mlflow.entities.model_registry import ModelVersion, RegisteredModel
-from mlflow.exceptions import MlflowException
-from mlflow.protos.databricks_pb2 import (
+from kiwi import register_model, set_registry_uri, get_registry_uri
+from kiwi.entities.model_registry import ModelVersion, RegisteredModel
+from kiwi.exceptions import MlflowException
+from kiwi.protos.databricks_pb2 import (
         ErrorCode, INTERNAL_ERROR, RESOURCE_ALREADY_EXISTS, FEATURE_DISABLED
 )
-from mlflow.tracking import MlflowClient
-from mlflow.tracking._tracking_service.utils import is_tracking_uri_set
-from mlflow.utils.file_utils import TempDir
+from kiwi.tracking import MlflowClient
+from kiwi.tracking._tracking_service.utils import is_tracking_uri_set
+from kiwi.utils.file_utils import TempDir
 
 
 def test_register_model_raises_exception_with_unsupported_registry_store():

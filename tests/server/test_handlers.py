@@ -5,13 +5,13 @@ import mock
 import pytest
 
 import os
-import mlflow
-from mlflow.entities import ViewType
-from mlflow.entities.model_registry import RegisteredModel, ModelVersion, \
+import kiwi
+from kiwi.entities import ViewType
+from kiwi.entities.model_registry import RegisteredModel, ModelVersion, \
     RegisteredModelTag, ModelVersionTag
-from mlflow.exceptions import MlflowException
-from mlflow.protos.databricks_pb2 import INTERNAL_ERROR, INVALID_PARAMETER_VALUE, ErrorCode
-from mlflow.server.handlers import get_endpoints, _create_experiment, _get_request_message, \
+from kiwi.exceptions import MlflowException
+from kiwi.protos.databricks_pb2 import INTERNAL_ERROR, INVALID_PARAMETER_VALUE, ErrorCode
+from kiwi.server.handlers import get_endpoints, _create_experiment, _get_request_message, \
     _search_runs, _log_batch, catch_mlflow_exception, _create_registered_model, \
     _update_registered_model, _delete_registered_model, _get_registered_model, \
     _list_registered_models, _search_registered_models, \
@@ -20,17 +20,17 @@ from mlflow.server.handlers import get_endpoints, _create_experiment, _get_reque
     _search_model_versions, _get_model_version, _transition_stage, _rename_registered_model, \
     _set_registered_model_tag, _delete_registered_model_tag, _set_model_version_tag, \
     _delete_model_version_tag
-from mlflow.server import BACKEND_STORE_URI_ENV_VAR, app
-from mlflow.store.entities.paged_list import PagedList
-from mlflow.protos.service_pb2 import CreateExperiment, SearchRuns
-from mlflow.protos.model_registry_pb2 import CreateRegisteredModel, UpdateRegisteredModel, \
+from kiwi.server import BACKEND_STORE_URI_ENV_VAR, app
+from kiwi.store.entities.paged_list import PagedList
+from kiwi.protos.service_pb2 import CreateExperiment, SearchRuns
+from kiwi.protos.model_registry_pb2 import CreateRegisteredModel, UpdateRegisteredModel, \
     DeleteRegisteredModel, ListRegisteredModels, SearchRegisteredModels, GetRegisteredModel, \
     GetLatestVersions, CreateModelVersion, UpdateModelVersion, \
     DeleteModelVersion, GetModelVersion, GetModelVersionDownloadUri, SearchModelVersions, \
     TransitionModelVersionStage, RenameRegisteredModel, SetRegisteredModelTag, \
     DeleteRegisteredModelTag, SetModelVersionTag, DeleteModelVersionTag
-from mlflow.utils.proto_json_utils import message_to_json
-from mlflow.utils.validation import MAX_BATCH_LOG_REQUEST_SIZE
+from kiwi.utils.proto_json_utils import message_to_json
+from kiwi.utils.validation import MAX_BATCH_LOG_REQUEST_SIZE
 
 
 @pytest.fixture()
@@ -190,11 +190,11 @@ def test_mlflow_server_with_installed_plugin(tmpdir):
         BACKEND_STORE_URI_ENV_VAR: "file-plugin:%s" % tmpdir.strpath,
     }
     with mock.patch.dict(os.environ, env):
-        mlflow.server.handlers._tracking_store = None
+        kiwi.server.handlers._tracking_store = None
         try:
-            plugin_file_store = mlflow.server.handlers._get_tracking_store()
+            plugin_file_store = kiwi.server.handlers._get_tracking_store()
         finally:
-            mlflow.server.handlers._tracking_store = None
+            kiwi.server.handlers._tracking_store = None
         assert isinstance(plugin_file_store, PluginFileStore)
         assert plugin_file_store.is_plugin
 

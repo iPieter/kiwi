@@ -6,7 +6,7 @@ import tempfile
 import os
 import zipfile
 import pyspark
-import mlflow
+import kiwi
 import click
 
 
@@ -14,7 +14,7 @@ import click
                     " called 'ratings-csv-dir'.")
 @click.option("--url", default="http://files.grouplens.org/datasets/movielens/ml-20m.zip")
 def load_raw_data(url):
-    with mlflow.start_run() as mlrun:
+    with kiwi.start_run() as mlrun:
         local_dir = tempfile.mkdtemp()
         local_filename = os.path.join(local_dir, "ml-20m.zip")
         print("Downloading %s to %s" % (url, local_filename))
@@ -32,7 +32,7 @@ def load_raw_data(url):
         ratings_file = os.path.join(extracted_dir, 'ratings.csv')
 
         print("Uploading ratings: %s" % ratings_file)
-        mlflow.log_artifact(ratings_file, "ratings-csv-dir")
+        kiwi.log_artifact(ratings_file, "ratings-csv-dir")
 
 
 if __name__ == '__main__':

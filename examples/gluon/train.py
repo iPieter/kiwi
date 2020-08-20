@@ -8,9 +8,9 @@ from mxnet.metric import Accuracy
 
 # The following import and function call are the only additions to code required
 # to automatically log metrics and parameters to MLflow.
-import mlflow.gluon
+import kiwi.gluon
 
-mlflow.gluon.autolog()
+kiwi.gluon.autolog()
 
 mnist_train = datasets.FashionMNIST(train=True)
 X, y = mnist_train[0]

@@ -1,8 +1,8 @@
-from mlflow.entities import RunStatus
-from mlflow.projects.utils import fetch_and_validate_project, get_or_create_run,\
+from kiwi.entities import RunStatus
+from kiwi.projects.utils import fetch_and_validate_project, get_or_create_run,\
     log_project_params_and_tags
-from mlflow.projects.backend.abstract_backend import AbstractBackend
-from mlflow.projects.submitted_run import SubmittedRun
+from kiwi.projects.backend.abstract_backend import AbstractBackend
+from kiwi.projects.submitted_run import SubmittedRun
 
 
 class DummySubmittedRun(SubmittedRun):

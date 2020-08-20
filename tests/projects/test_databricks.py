@@ -8,21 +8,21 @@ from databricks_cli.configure.provider import DatabricksConfig
 import databricks_cli
 import pytest
 
-import mlflow
-from mlflow import cli
-from mlflow.exceptions import MlflowException
-from mlflow.projects.databricks import DatabricksJobRunner, _get_cluster_mlflow_run_cmd
-from mlflow.protos.databricks_pb2 import ErrorCode, INVALID_PARAMETER_VALUE
-from mlflow.entities import RunStatus
-from mlflow.projects import databricks, ExecutionException
-from mlflow.tracking import MlflowClient
-from mlflow.utils import file_utils
-from mlflow.store.tracking.file_store import FileStore
-from mlflow.utils.mlflow_tags import MLFLOW_DATABRICKS_RUN_URL, \
+import kiwi
+from kiwi import cli
+from kiwi.exceptions import MlflowException
+from kiwi.projects.databricks import DatabricksJobRunner, _get_cluster_mlflow_run_cmd
+from kiwi.protos.databricks_pb2 import ErrorCode, INVALID_PARAMETER_VALUE
+from kiwi.entities import RunStatus
+from kiwi.projects import databricks, ExecutionException
+from kiwi.tracking import MlflowClient
+from kiwi.utils import file_utils
+from kiwi.store.tracking.file_store import FileStore
+from kiwi.utils.mlflow_tags import MLFLOW_DATABRICKS_RUN_URL, \
     MLFLOW_DATABRICKS_SHELL_JOB_RUN_ID, \
     MLFLOW_DATABRICKS_WEBAPP_URL
-from mlflow.utils.rest_utils import _DEFAULT_HEADERS
-from mlflow.utils.uri import construct_db_uri_from_profile
+from kiwi.utils.rest_utils import _DEFAULT_HEADERS
+from kiwi.utils.uri import construct_db_uri_from_profile
 from tests import helper_functions
 from tests.integration.utils import invoke_cli_runner
 
@@ -83,7 +83,7 @@ def upload_to_dbfs_mock(dbfs_root_mock):
         shutil.copy(src_path, mock_dbfs_dst)
 
     with mock.patch.object(
-            mlflow.projects.databricks.DatabricksJobRunner, "_upload_to_dbfs",
+            kiwi.projects.databricks.DatabricksJobRunner, "_upload_to_dbfs",
             new=upload_mock_fn) as upload_mock:
         yield upload_mock
 
@@ -130,7 +130,7 @@ def mock_runs_get_result(succeeded):
 
 
 def run_databricks_project(cluster_spec, **kwargs):
-    return mlflow.projects.run(
+    return kiwi.projects.run(
         uri=TEST_PROJECT_DIR, backend="databricks", backend_config=cluster_spec,
         parameters={"alpha": "0.4"}, **kwargs)
 
@@ -203,21 +203,21 @@ def test_run_databricks_validations(
             run_databricks_project(cluster_spec_mock, synchronous=True)
         assert db_api_req_mock.call_count == 0
         db_api_req_mock.reset_mock()
-        mlflow_service = mlflow.tracking.MlflowClient()
+        mlflow_service = kiwi.tracking.MlflowClient()
         assert (len(mlflow_service.list_run_infos(experiment_id=FileStore.DEFAULT_EXPERIMENT_ID))
                 == 0)
         tracking_uri_mock.return_value = "http://"
         # Test misspecified parameters
         with pytest.raises(ExecutionException):
-            mlflow.projects.run(
+            kiwi.projects.run(
                 TEST_PROJECT_DIR, backend="databricks", entry_point="greeter",
                 backend_config=cluster_spec_mock)
         assert db_api_req_mock.call_count == 0
         db_api_req_mock.reset_mock()
         # Test bad cluster spec
         with pytest.raises(ExecutionException):
-            mlflow.projects.run(TEST_PROJECT_DIR, backend="databricks", synchronous=True,
-                                backend_config=None)
+            kiwi.projects.run(TEST_PROJECT_DIR, backend="databricks", synchronous=True,
+                              backend_config=None)
         assert db_api_req_mock.call_count == 0
         db_api_req_mock.reset_mock()
         # Test that validations pass with good tracking URIs
@@ -348,18 +348,18 @@ def test_run_databricks_cancel(
         assert runs_cancel_mock.call_count == 1
         # Test that we raise an exception when a blocking Databricks run fails
         runs_get_mock.return_value = mock_runs_get_result(succeeded=False)
-        with pytest.raises(mlflow.projects.ExecutionException):
+        with pytest.raises(kiwi.projects.ExecutionException):
             run_databricks_project(cluster_spec_mock, synchronous=True)
 
 
 def test_get_tracking_uri_for_run():
-    mlflow.set_tracking_uri("http://some-uri")
+    kiwi.set_tracking_uri("http://some-uri")
     assert databricks._get_tracking_uri_for_run() == "http://some-uri"
-    mlflow.set_tracking_uri("databricks://profile")
+    kiwi.set_tracking_uri("databricks://profile")
     assert databricks._get_tracking_uri_for_run() == "databricks"
-    mlflow.set_tracking_uri(None)
-    with mock.patch.dict(os.environ, {mlflow.tracking._TRACKING_URI_ENV_VAR: "http://some-uri"}):
-        assert mlflow.tracking._tracking_service.utils.get_tracking_uri() == "http://some-uri"
+    kiwi.set_tracking_uri(None)
+    with mock.patch.dict(os.environ, {kiwi.tracking._TRACKING_URI_ENV_VAR: "http://some-uri"}):
+        assert kiwi.tracking._tracking_service.utils.get_tracking_uri() == "http://some-uri"
 
 
 class MockProfileConfigProvider:

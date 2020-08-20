@@ -6,10 +6,10 @@ from docker.errors import BuildError, APIError
 
 import pytest
 
-from mlflow.utils.file_utils import TempDir, _copy_project
+from kiwi.utils.file_utils import TempDir, _copy_project
 
-from mlflow.entities import RunStatus
-from mlflow.projects import _project_spec
+from kiwi.entities import RunStatus
+from kiwi.projects import _project_spec
 
 
 TEST_DIR = "tests"

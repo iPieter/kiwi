@@ -16,8 +16,8 @@ import numpy as np
 
 from hyperopt import fmin, hp, tpe, rand
 
-import mlflow.projects
-from mlflow.tracking.client import MlflowClient
+import kiwi.projects
+from kiwi.tracking.client import MlflowClient
 
 _inf = np.finfo(np.float64).max
 
@@ -40,7 +40,7 @@ def train(training_data, max_runs, epochs, metric, algo, seed):
     Run hyperparameter optimization.
     """
     # create random file to store run ids of the training tasks
-    tracking_client = mlflow.tracking.MlflowClient()
+    tracking_client = kiwi.tracking.MlflowClient()
 
     def new_eval(nepochs,
                  experiment_id,
@@ -72,10 +72,10 @@ def train(training_data, max_runs, epochs, metric, algo, seed):
                           learning_rate, drop_out_1
             :return: The metric value evaluated on the validation data.
             """
-            import mlflow.tracking
+            import kiwi.tracking
             lr, momentum = params
-            with mlflow.start_run(nested=True) as child_run:
-                p = mlflow.projects.run(
+            with kiwi.start_run(nested=True) as child_run:
+                p = kiwi.projects.run(
                     uri=".",
                     entry_point="train",
                     run_id=child_run.info.run_id,
@@ -107,7 +107,7 @@ def train(training_data, max_runs, epochs, metric, algo, seed):
                 valid_loss = null_valid_loss
                 test_loss = null_test_loss
 
-            mlflow.log_metrics({
+            kiwi.log_metrics({
                 "train_{}".format(metric): train_loss,
                 "val_{}".format(metric):  valid_loss,
                 "test_{}".format(metric): test_loss
@@ -125,7 +125,7 @@ def train(training_data, max_runs, epochs, metric, algo, seed):
         hp.uniform('momentum', .0, 1.0),
     ]
 
-    with mlflow.start_run() as run:
+    with kiwi.start_run() as run:
         experiment_id = run.info.experiment_id
         # Evaluate null model first.
         train_null_loss, valid_null_loss, test_null_loss = new_eval(0,
@@ -142,7 +142,7 @@ def train(training_data, max_runs, epochs, metric, algo, seed):
                     space=space,
                     algo=tpe.suggest if algo == "tpe.suggest" else rand.suggest,
                     max_evals=max_runs)
-        mlflow.set_tag("best params", str(best))
+        kiwi.set_tag("best params", str(best))
         # find the best run, log its metrics as the final metrics of this run.
         client = MlflowClient()
         runs = client.search_runs([experiment_id], "tags.mlflow.parentRunId = '{run_id}' ".format(
@@ -158,8 +158,8 @@ def train(training_data, max_runs, epochs, metric, algo, seed):
                 best_val_train = r.data.metrics["train_rmse"]
                 best_val_valid = r.data.metrics["val_rmse"]
                 best_val_test = r.data.metrics["test_rmse"]
-        mlflow.set_tag("best_run", best_run.info.run_id)
-        mlflow.log_metrics({
+        kiwi.set_tag("best_run", best_run.info.run_id)
+        kiwi.log_metrics({
             "train_{}".format(metric): best_val_train,
             "val_{}".format(metric): best_val_valid,
             "test_{}".format(metric): best_val_test

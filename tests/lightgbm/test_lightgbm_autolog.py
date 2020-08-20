@@ -7,14 +7,14 @@ from sklearn import datasets
 import lightgbm as lgb
 import matplotlib as mpl
 
-import mlflow
-import mlflow.lightgbm
+import kiwi
+import kiwi.lightgbm
 
 mpl.use('Agg')
 
 
 def get_latest_run():
-    client = mlflow.tracking.MlflowClient()
+    client = kiwi.tracking.MlflowClient()
     return client.get_run(client.list_run_infos(experiment_id='0')[0].run_id)
 
 
@@ -37,23 +37,23 @@ def train_set():
 
 @pytest.mark.large
 def test_lgb_autolog_ends_auto_created_run(bst_params, train_set):
-    mlflow.lightgbm.autolog()
+    kiwi.lightgbm.autolog()
     lgb.train(bst_params, train_set, num_boost_round=1)
-    assert mlflow.active_run() is None
+    assert kiwi.active_run() is None
 
 
 @pytest.mark.large
 def test_lgb_autolog_persists_manually_created_run(bst_params, train_set):
-    mlflow.lightgbm.autolog()
-    with mlflow.start_run() as run:
+    kiwi.lightgbm.autolog()
+    with kiwi.start_run() as run:
         lgb.train(bst_params, train_set, num_boost_round=1)
-        assert mlflow.active_run()
-        assert mlflow.active_run().info.run_id == run.info.run_id
+        assert kiwi.active_run()
+        assert kiwi.active_run().info.run_id == run.info.run_id
 
 
 @pytest.mark.large
 def test_lgb_autolog_logs_default_params(bst_params, train_set):
-    mlflow.lightgbm.autolog()
+    kiwi.lightgbm.autolog()
     lgb.train(bst_params, train_set)
     run = get_latest_run()
     params = run.data.params
@@ -80,7 +80,7 @@ def test_lgb_autolog_logs_default_params(bst_params, train_set):
 
 @pytest.mark.large
 def test_lgb_autolog_logs_specified_params(bst_params, train_set):
-    mlflow.lightgbm.autolog()
+    kiwi.lightgbm.autolog()
     expected_params = {
         'num_boost_round': 10,
         'early_stopping_rounds': 5,
@@ -105,13 +105,13 @@ def test_lgb_autolog_logs_specified_params(bst_params, train_set):
 
 @pytest.mark.large
 def test_lgb_autolog_logs_metrics_with_validation_data(bst_params, train_set):
-    mlflow.lightgbm.autolog()
+    kiwi.lightgbm.autolog()
     evals_result = {}
     lgb.train(bst_params, train_set, num_boost_round=10, valid_sets=[train_set],
               valid_names=['train'], evals_result=evals_result)
     run = get_latest_run()
     data = run.data
-    client = mlflow.tracking.MlflowClient()
+    client = kiwi.tracking.MlflowClient()
     metric_key = 'train-multi_logloss'
     metric_history = [x.value for x in client.get_metric_history(run.info.run_id, metric_key)]
     assert metric_key in data.metrics
@@ -121,7 +121,7 @@ def test_lgb_autolog_logs_metrics_with_validation_data(bst_params, train_set):
 
 @pytest.mark.large
 def test_lgb_autolog_logs_metrics_with_multi_validation_data(bst_params, train_set):
-    mlflow.lightgbm.autolog()
+    kiwi.lightgbm.autolog()
     evals_result = {}
     # If we use [train_set, train_set] here, LightGBM ignores the first dataset.
     # To avoid that, create a new Dataset object.
@@ -131,7 +131,7 @@ def test_lgb_autolog_logs_metrics_with_multi_validation_data(bst_params, train_s
               valid_names=valid_names, evals_result=evals_result)
     run = get_latest_run()
     data = run.data
-    client = mlflow.tracking.MlflowClient()
+    client = kiwi.tracking.MlflowClient()
     for valid_name in valid_names:
         metric_key = '{}-multi_logloss'.format(valid_name)
         metric_history = [x.value for x in client.get_metric_history(run.info.run_id, metric_key)]
@@ -142,7 +142,7 @@ def test_lgb_autolog_logs_metrics_with_multi_validation_data(bst_params, train_s
 
 @pytest.mark.large
 def test_lgb_autolog_logs_metrics_with_multi_metrics(bst_params, train_set):
-    mlflow.lightgbm.autolog()
+    kiwi.lightgbm.autolog()
     evals_result = {}
     params = {'metric': ['multi_error', 'multi_logloss']}
     params.update(bst_params)
@@ -152,7 +152,7 @@ def test_lgb_autolog_logs_metrics_with_multi_metrics(bst_params, train_set):
               valid_names=valid_names, evals_result=evals_result)
     run = get_latest_run()
     data = run.data
-    client = mlflow.tracking.MlflowClient()
+    client = kiwi.tracking.MlflowClient()
     for metric_name in params['metric']:
         metric_key = '{}-{}'.format(valid_names[0], metric_name)
         metric_history = [x.value for x in client.get_metric_history(run.info.run_id, metric_key)]
@@ -163,7 +163,7 @@ def test_lgb_autolog_logs_metrics_with_multi_metrics(bst_params, train_set):
 
 @pytest.mark.large
 def test_lgb_autolog_logs_metrics_with_multi_validation_data_and_metrics(bst_params, train_set):
-    mlflow.lightgbm.autolog()
+    kiwi.lightgbm.autolog()
     evals_result = {}
     params = {'metric': ['multi_error', 'multi_logloss']}
     params.update(bst_params)
@@ -173,7 +173,7 @@ def test_lgb_autolog_logs_metrics_with_multi_validation_data_and_metrics(bst_par
               valid_names=valid_names, evals_result=evals_result)
     run = get_latest_run()
     data = run.data
-    client = mlflow.tracking.MlflowClient()
+    client = kiwi.tracking.MlflowClient()
     for valid_name in valid_names:
         for metric_name in params['metric']:
             metric_key = '{}-{}'.format(valid_name, metric_name)
@@ -186,7 +186,7 @@ def test_lgb_autolog_logs_metrics_with_multi_validation_data_and_metrics(bst_par
 
 @pytest.mark.large
 def test_lgb_autolog_logs_metrics_with_early_stopping(bst_params, train_set):
-    mlflow.lightgbm.autolog()
+    kiwi.lightgbm.autolog()
     evals_result = {}
     params = {'metric': ['multi_error', 'multi_logloss']}
     params.update(bst_params)
@@ -196,7 +196,7 @@ def test_lgb_autolog_logs_metrics_with_early_stopping(bst_params, train_set):
                       valid_sets=valid_sets, valid_names=valid_names, evals_result=evals_result)
     run = get_latest_run()
     data = run.data
-    client = mlflow.tracking.MlflowClient()
+    client = kiwi.tracking.MlflowClient()
     assert 'best_iteration' in data.metrics
     assert int(data.metrics['best_iteration']) == model.best_iteration
     assert 'stopped_iteration' in data.metrics
@@ -215,12 +215,12 @@ def test_lgb_autolog_logs_metrics_with_early_stopping(bst_params, train_set):
 
 @pytest.mark.large
 def test_lgb_autolog_logs_feature_importance(bst_params, train_set):
-    mlflow.lightgbm.autolog()
+    kiwi.lightgbm.autolog()
     model = lgb.train(bst_params, train_set, num_boost_round=10)
     run = get_latest_run()
     run_id = run.info.run_id
     artifacts_dir = run.info.artifact_uri.replace('file://', '')
-    client = mlflow.tracking.MlflowClient()
+    client = kiwi.tracking.MlflowClient()
     artifacts = [x.path for x in client.list_artifacts(run_id)]
 
     for imp_type in ['split', 'gain']:
@@ -243,18 +243,18 @@ def test_lgb_autolog_logs_feature_importance(bst_params, train_set):
 
 @pytest.mark.large
 def test_no_figure_is_opened_after_logging(bst_params, train_set):
-    mlflow.lightgbm.autolog()
+    kiwi.lightgbm.autolog()
     lgb.train(bst_params, train_set, num_boost_round=10)
     assert mpl.pyplot.get_fignums() == []
 
 
 @pytest.mark.large
 def test_lgb_autolog_loads_model_from_artifact(bst_params, train_set):
-    mlflow.lightgbm.autolog()
+    kiwi.lightgbm.autolog()
     model = lgb.train(bst_params, train_set, num_boost_round=10)
     run = get_latest_run()
     run_id = run.info.run_id
 
-    loaded_model = mlflow.lightgbm.load_model('runs:/{}/model'.format(run_id))
+    loaded_model = kiwi.lightgbm.load_model('runs:/{}/model'.format(run_id))
     np.testing.assert_array_almost_equal(model.predict(train_set.data),
                                          loaded_model.predict(train_set.data))

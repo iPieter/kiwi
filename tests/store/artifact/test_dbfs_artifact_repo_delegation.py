@@ -2,12 +2,12 @@ import os
 import mock
 import pytest
 
-from mlflow.store.artifact.artifact_repository_registry import get_artifact_repository
-from mlflow.store.artifact.local_artifact_repo import LocalArtifactRepository
-from mlflow.store.artifact.dbfs_artifact_repo import DbfsRestArtifactRepository
-from mlflow.store.artifact.dbfs_artifact_repo import DatabricksArtifactRepository
+from kiwi.store.artifact.artifact_repository_registry import get_artifact_repository
+from kiwi.store.artifact.local_artifact_repo import LocalArtifactRepository
+from kiwi.store.artifact.dbfs_artifact_repo import DbfsRestArtifactRepository
+from kiwi.store.artifact.dbfs_artifact_repo import DatabricksArtifactRepository
 
-from mlflow.utils.rest_utils import MlflowHostCreds
+from kiwi.utils.rest_utils import MlflowHostCreds
 
 
 @pytest.fixture()

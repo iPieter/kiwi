@@ -16,18 +16,18 @@ try:
 except ImportError:
     from io import StringIO
 
-import mlflow
-from mlflow import pyfunc
-import mlflow.sklearn
-from mlflow.utils.file_utils import TempDir, path_to_local_file_uri
-from mlflow.utils.environment import _mlflow_conda_env
-from mlflow.utils import PYTHON_VERSION
+import kiwi
+from kiwi import pyfunc
+import kiwi.sklearn
+from kiwi.utils.file_utils import TempDir, path_to_local_file_uri
+from kiwi.utils.environment import _mlflow_conda_env
+from kiwi.utils import PYTHON_VERSION
 from tests.models import test_pyfunc
 from tests.helper_functions import pyfunc_build_image, pyfunc_serve_from_docker_image, \
     pyfunc_serve_from_docker_image_with_env_override, \
     RestEndpoint, get_safe_port, pyfunc_serve_and_score_model
-from mlflow.protos.databricks_pb2 import ErrorCode, MALFORMED_REQUEST
-from mlflow.pyfunc.scoring_server import CONTENT_TYPE_JSON_SPLIT_ORIENTED, \
+from kiwi.protos.databricks_pb2 import ErrorCode, MALFORMED_REQUEST
+from kiwi.pyfunc.scoring_server import CONTENT_TYPE_JSON_SPLIT_ORIENTED, \
     CONTENT_TYPE_JSON, CONTENT_TYPE_CSV
 
 # NB: for now, windows tests do not have conda available.
@@ -95,7 +95,7 @@ def test_mlflow_is_not_installed_unless_specified():
         fake_model_path = tmp.path("fake_model")
         fake_env_path = tmp.path("fake_env.yaml")
         _mlflow_conda_env(path=fake_env_path, install_mlflow=False)
-        mlflow.pyfunc.save_model(fake_model_path, loader_module=__name__, conda_env=fake_env_path)
+        kiwi.pyfunc.save_model(fake_model_path, loader_module=__name__, conda_env=fake_env_path)
         # The following should fail because there should be no mlflow in the env:
         p = subprocess.Popen(["mlflow", "models", "predict", "-m", fake_model_path],
                              stderr=subprocess.PIPE, cwd=tmp.path(""))
@@ -110,7 +110,7 @@ def test_mlflow_is_not_installed_unless_specified():
 
 
 def test_model_with_no_deployable_flavors_fails_pollitely():
-    from mlflow.models import Model
+    from kiwi.models import Model
     with TempDir(chdr=True) as tmp:
         m = Model(artifact_path=None, run_id=None, utc_time_created="now",
                   flavors={"some": {}, "useless": {}, "flavors": {}})
@@ -130,8 +130,8 @@ def test_model_with_no_deployable_flavors_fails_pollitely():
 def test_serve_gunicorn_opts(iris_data, sk_model):
     if sys.platform == "win32":
         pytest.skip("This test requires gunicorn which is not available on windows.")
-    with mlflow.start_run() as active_run:
-        mlflow.sklearn.log_model(sk_model, "model", registered_model_name="imlegit")
+    with kiwi.start_run() as active_run:
+        kiwi.sklearn.log_model(sk_model, "model", registered_model_name="imlegit")
         run_id = active_run.info.run_id
 
     model_uris = [
@@ -162,8 +162,8 @@ def test_serve_gunicorn_opts(iris_data, sk_model):
 @pytest.mark.large
 def test_predict(iris_data, sk_model):
     with TempDir(chdr=True) as tmp:
-        with mlflow.start_run() as active_run:
-            mlflow.sklearn.log_model(sk_model, "model", registered_model_name="impredicting")
+        with kiwi.start_run() as active_run:
+            kiwi.sklearn.log_model(sk_model, "model", registered_model_name="impredicting")
             model_uri = "runs:/{run_id}/model".format(run_id=active_run.info.run_id)
         model_registry_uri = "models:/{name}/{stage}".format(name="impredicting", stage="None")
         input_json_path = tmp.path("input.json")
@@ -175,7 +175,7 @@ def test_predict(iris_data, sk_model):
 
         # Test with no conda & model registry URI
         env_with_tracking_uri = os.environ.copy()
-        env_with_tracking_uri.update(MLFLOW_TRACKING_URI=mlflow.get_tracking_uri())
+        env_with_tracking_uri.update(MLFLOW_TRACKING_URI=kiwi.get_tracking_uri())
         p = subprocess.Popen(["mlflow", "models", "predict", "-m", model_registry_uri,
                               "-i", input_json_path,
                               "-o", output_json_path, "--no-conda"],
@@ -252,8 +252,8 @@ def test_prepare_env_passes(sk_model):
         pytest.skip("This test requires conda.")
 
     with TempDir(chdr=True):
-        with mlflow.start_run() as active_run:
-            mlflow.sklearn.log_model(sk_model, "model")
+        with kiwi.start_run() as active_run:
+            kiwi.sklearn.log_model(sk_model, "model")
             model_uri = "runs:/{run_id}/model".format(run_id=active_run.info.run_id)
 
         # Test with no conda
@@ -278,9 +278,9 @@ def test_prepare_env_fails(sk_model):
         pytest.skip("This test requires conda.")
 
     with TempDir(chdr=True):
-        with mlflow.start_run() as active_run:
-            mlflow.sklearn.log_model(sk_model, "model",
-                                     conda_env={"dependencies": ["mlflow-does-not-exist-dep==abc"]})
+        with kiwi.start_run() as active_run:
+            kiwi.sklearn.log_model(sk_model, "model",
+                                   conda_env={"dependencies": ["mlflow-does-not-exist-dep==abc"]})
             model_uri = "runs:/{run_id}/model".format(run_id=active_run.info.run_id)
 
         # Test with no conda
@@ -295,8 +295,8 @@ def test_prepare_env_fails(sk_model):
 
 @pytest.mark.large
 def test_build_docker(iris_data, sk_model):
-    with mlflow.start_run() as active_run:
-        mlflow.sklearn.log_model(sk_model, "model")
+    with kiwi.start_run() as active_run:
+        kiwi.sklearn.log_model(sk_model, "model")
         model_uri = "runs:/{run_id}/model".format(run_id=active_run.info.run_id)
     x, _ = iris_data
     df = pd.DataFrame(x)
@@ -308,8 +308,8 @@ def test_build_docker(iris_data, sk_model):
 
 @pytest.mark.large
 def test_build_docker_with_env_override(iris_data, sk_model):
-    with mlflow.start_run() as active_run:
-        mlflow.sklearn.log_model(sk_model, "model")
+    with kiwi.start_run() as active_run:
+        kiwi.sklearn.log_model(sk_model, "model")
         model_uri = "runs:/{run_id}/model".format(run_id=active_run.info.run_id)
     x, _ = iris_data
     df = pd.DataFrame(x)

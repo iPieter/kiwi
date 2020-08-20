@@ -1,14 +1,14 @@
 import mock
 import pytest
 
-from mlflow.entities import SourceType, ViewType, RunTag
-from mlflow.entities.model_registry import ModelVersion
-from mlflow.exceptions import MlflowException
-from mlflow.protos.databricks_pb2 import ErrorCode, FEATURE_DISABLED
-from mlflow.store.tracking import SEARCH_MAX_RESULTS_DEFAULT
-from mlflow.tracking import set_registry_uri, MlflowClient
-from mlflow.utils.file_utils import TempDir
-from mlflow.utils.mlflow_tags import MLFLOW_USER, MLFLOW_SOURCE_NAME, MLFLOW_SOURCE_TYPE, \
+from kiwi.entities import SourceType, ViewType, RunTag
+from kiwi.entities.model_registry import ModelVersion
+from kiwi.exceptions import MlflowException
+from kiwi.protos.databricks_pb2 import ErrorCode, FEATURE_DISABLED
+from kiwi.store.tracking import SEARCH_MAX_RESULTS_DEFAULT
+from kiwi.tracking import set_registry_uri, MlflowClient
+from kiwi.utils.file_utils import TempDir
+from kiwi.utils.mlflow_tags import MLFLOW_USER, MLFLOW_SOURCE_NAME, MLFLOW_SOURCE_TYPE, \
     MLFLOW_PARENT_RUN_ID, MLFLOW_GIT_COMMIT, MLFLOW_PROJECT_ENTRY_POINT
 
 

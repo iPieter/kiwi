@@ -10,27 +10,27 @@ import mock
 import pytest
 import sqlalchemy
 import time
-import mlflow
+import kiwi
 import uuid
 import json
 import pandas as pd
 
-import mlflow.db
-import mlflow.store.db.base_sql_model
-from mlflow.entities import ViewType, RunTag, SourceType, RunStatus, Experiment, Metric, Param
-from mlflow.protos.databricks_pb2 import ErrorCode, RESOURCE_DOES_NOT_EXIST, \
+import kiwi.db
+import kiwi.store.db.base_sql_model
+from kiwi.entities import ViewType, RunTag, SourceType, RunStatus, Experiment, Metric, Param
+from kiwi.protos.databricks_pb2 import ErrorCode, RESOURCE_DOES_NOT_EXIST, \
     INVALID_PARAMETER_VALUE, INTERNAL_ERROR
-from mlflow.store.tracking import SEARCH_MAX_RESULTS_DEFAULT
-from mlflow.store.db.utils import _get_schema_version, _get_latest_schema_revision, \
+from kiwi.store.tracking import SEARCH_MAX_RESULTS_DEFAULT
+from kiwi.store.db.utils import _get_schema_version, _get_latest_schema_revision, \
     MLFLOW_SQLALCHEMYSTORE_MAX_OVERFLOW, MLFLOW_SQLALCHEMYSTORE_POOL_SIZE
-from mlflow.store.tracking.dbmodels import models
-from mlflow.store.db.db_types import MYSQL, MSSQL
-from mlflow import entities
-from mlflow.exceptions import MlflowException
-from mlflow.store.tracking.sqlalchemy_store import SqlAlchemyStore
-from mlflow.utils import mlflow_tags
-from mlflow.utils.file_utils import TempDir
-from mlflow.utils.uri import extract_db_type_from_uri
+from kiwi.store.tracking.dbmodels import models
+from kiwi.store.db.db_types import MYSQL, MSSQL
+from kiwi import entities
+from kiwi.exceptions import MlflowException
+from kiwi.store.tracking.sqlalchemy_store import SqlAlchemyStore
+from kiwi.utils import mlflow_tags
+from kiwi.utils.file_utils import TempDir
+from kiwi.utils.uri import extract_db_type_from_uri
 from tests.resources.db.initial_models import Base as InitialBase
 from tests.integration.utils import invoke_cli_runner
 from tests.store.tracking import AbstractStoreTest
@@ -99,7 +99,7 @@ class TestSqlAlchemyStoreSqlite(unittest.TestCase, AbstractStoreTest):
         return self.store
 
     def tearDown(self):
-        mlflow.store.db.base_sql_model.Base.metadata.drop_all(self.store.engine)
+        kiwi.store.db.base_sql_model.Base.metadata.drop_all(self.store.engine)
         os.remove(self.temp_dbfile)
         shutil.rmtree(ARTIFACT_URI)
 
@@ -422,7 +422,7 @@ class TestSqlAlchemyStoreSqlite(unittest.TestCase, AbstractStoreTest):
             'entry_point_name': 'main.py',
             'start_time': int(time.time()),
             'end_time': int(time.time()),
-            'source_version': mlflow.__version__,
+            'source_version': kiwi.__version__,
             'lifecycle_stage': entities.LifecycleStage.ACTIVE,
             'artifact_uri': '//'
         }
@@ -1546,7 +1546,7 @@ class TestSqlAlchemyStoreSqlite(unittest.TestCase, AbstractStoreTest):
         engine = sqlalchemy.create_engine(self.db_url)
         assert _get_schema_version(engine) == _get_latest_schema_revision()
         for _ in range(3):
-            invoke_cli_runner(mlflow.db.commands, ['upgrade', self.db_url])
+            invoke_cli_runner(kiwi.db.commands, ['upgrade', self.db_url])
             assert _get_schema_version(engine) == _get_latest_schema_revision()
 
     def test_metrics_materialization_upgrade_succeeds_and_produces_expected_latest_metric_values(
@@ -1573,9 +1573,9 @@ class TestSqlAlchemyStoreSqlite(unittest.TestCase, AbstractStoreTest):
         following code from the directory containing this test suite:
 
         >>> import json
-        >>> import mlflow
-        >>> from mlflow.tracking.client import MlflowClient
-        >>> mlflow.set_tracking_uri(
+        >>> import kiwi
+        >>> from kiwi.tracking.client import MlflowClient
+        >>> kiwi.set_tracking_uri(
         ...     "sqlite:///../../resources/db/db_version_7ac759974ad8_with_metrics.sql")
         >>> client = MlflowClient()
         >>> summary_metrics = {
@@ -1597,7 +1597,7 @@ class TestSqlAlchemyStoreSqlite(unittest.TestCase, AbstractStoreTest):
                 src=os.path.join(db_resources_path, "db_version_7ac759974ad8_with_metrics.sql"),
                 dst=db_path)
 
-            invoke_cli_runner(mlflow.db.commands, ['upgrade', db_url])
+            invoke_cli_runner(kiwi.db.commands, ['upgrade', db_url])
             store = self._get_store(db_uri=db_url)
             with open(expected_metric_values_path, "r") as f:
                 expected_metric_values = json.load(f)
@@ -1756,7 +1756,7 @@ class TestSqlAlchemyStoreSqliteMigratedDB(TestSqlAlchemyStoreSqlite):
         self.db_url = "%s%s" % (DB_URI, self.temp_dbfile)
         engine = sqlalchemy.create_engine(self.db_url)
         InitialBase.metadata.create_all(engine)
-        invoke_cli_runner(mlflow.db.commands, ['upgrade', self.db_url])
+        invoke_cli_runner(kiwi.db.commands, ['upgrade', self.db_url])
         self.store = SqlAlchemyStore(self.db_url, ARTIFACT_URI)
 
     def tearDown(self):

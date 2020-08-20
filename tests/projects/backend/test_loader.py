@@ -1,7 +1,7 @@
 import entrypoints
 import mock
 
-from mlflow.projects.backend import loader
+from kiwi.projects.backend import loader
 
 
 def test_plugin_backend():

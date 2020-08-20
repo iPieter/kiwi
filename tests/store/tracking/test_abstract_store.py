@@ -1,8 +1,8 @@
 import mock
 
-from mlflow.store.tracking import SEARCH_MAX_RESULTS_DEFAULT
-from mlflow.store.tracking.abstract_store import AbstractStore
-from mlflow.entities import ViewType
+from kiwi.store.tracking import SEARCH_MAX_RESULTS_DEFAULT
+from kiwi.store.tracking.abstract_store import AbstractStore
+from kiwi.entities import ViewType
 
 
 class AbstractStoreTestImpl(AbstractStore):

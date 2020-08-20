@@ -16,19 +16,19 @@ import shutil
 from collections import namedtuple
 import yaml
 
-import mlflow
-import mlflow.pyfunc.scoring_server as pyfunc_scoring_server
-import mlflow.tracking
-from mlflow import pyfunc, mleap
-from mlflow import spark as sparkm
-from mlflow.exceptions import MlflowException
-from mlflow.models import Model, infer_signature
-from mlflow.models.utils import _read_example
-from mlflow.store.artifact.s3_artifact_repo import S3ArtifactRepository
-from mlflow.tracking.artifact_utils import _download_artifact_from_uri
-from mlflow.utils.environment import _mlflow_conda_env
-from mlflow.utils.file_utils import TempDir
-from mlflow.utils.model_utils import _get_flavor_configuration
+import kiwi
+import kiwi.pyfunc.scoring_server as pyfunc_scoring_server
+import kiwi.tracking
+from kiwi import pyfunc, mleap
+from kiwi import spark as sparkm
+from kiwi.exceptions import MlflowException
+from kiwi.models import Model, infer_signature
+from kiwi.models.utils import _read_example
+from kiwi.store.artifact.s3_artifact_repo import S3ArtifactRepository
+from kiwi.tracking.artifact_utils import _download_artifact_from_uri
+from kiwi.utils.environment import _mlflow_conda_env
+from kiwi.utils.file_utils import TempDir
+from kiwi.utils.model_utils import _get_flavor_configuration
 
 from tests.helper_functions import score_model_in_sagemaker_docker_container
 from tests.pyfunc.test_spark import score_model_as_udf, get_spark_session
@@ -139,7 +139,7 @@ def model_path(tmpdir):
 @pytest.mark.large
 def test_hadoop_filesystem(tmpdir):
     # copy local dir to and back from HadoopFS and make sure the results match
-    from mlflow.spark import _HadoopFileSystem as FS
+    from kiwi.spark import _HadoopFileSystem as FS
     test_dir_0 = os.path.join(str(tmpdir), "expected")
     test_file_0 = os.path.join(test_dir_0, "root", "file_0")
     test_dir_1 = os.path.join(test_dir_0, "root", "subdir")
@@ -251,7 +251,7 @@ def test_model_deployment(spark_model_iris, model_path, spark_custom_env):
         model_uri=model_path,
         data=spark_model_iris.pandas_df,
         content_type=pyfunc_scoring_server.CONTENT_TYPE_JSON_SPLIT_ORIENTED,
-        flavor=mlflow.pyfunc.FLAVOR_NAME)
+        flavor=kiwi.pyfunc.FLAVOR_NAME)
     np.testing.assert_array_almost_equal(
         spark_model_iris.predictions,
         np.array(json.loads(scoring_response_1.content)),
@@ -261,7 +261,7 @@ def test_model_deployment(spark_model_iris, model_path, spark_custom_env):
         model_uri=model_path,
         data=spark_model_iris.pandas_df.to_json(orient="split"),
         content_type=pyfunc_scoring_server.CONTENT_TYPE_JSON,
-        flavor=mlflow.mleap.FLAVOR_NAME)
+        flavor=kiwi.mleap.FLAVOR_NAME)
     np.testing.assert_array_almost_equal(
         spark_model_iris.predictions,
         np.array(json.loads(scoring_response_2.content)),
@@ -276,7 +276,7 @@ def test_sagemaker_docker_model_scoring_with_default_conda_env(spark_model_iris,
         model_uri=model_path,
         data=spark_model_iris.pandas_df,
         content_type=pyfunc_scoring_server.CONTENT_TYPE_JSON,
-        flavor=mlflow.pyfunc.FLAVOR_NAME)
+        flavor=kiwi.pyfunc.FLAVOR_NAME)
     deployed_model_preds = np.array(json.loads(scoring_response.content))
 
     np.testing.assert_array_almost_equal(
@@ -288,7 +288,7 @@ def test_sagemaker_docker_model_scoring_with_default_conda_env(spark_model_iris,
 @pytest.mark.large
 def test_sparkml_model_log(tmpdir, spark_model_iris):
     # Print the coefficients and intercept for multinomial logistic regression
-    old_tracking_uri = mlflow.get_tracking_uri()
+    old_tracking_uri = kiwi.get_tracking_uri()
     cnt = 0
     # should_start_run tests whether or not calling log_model() automatically starts a run.
     for should_start_run in [False, True]:
@@ -296,15 +296,15 @@ def test_sparkml_model_log(tmpdir, spark_model_iris):
             print("should_start_run =", should_start_run, "dfs_tmp_dir =", dfs_tmp_dir)
             try:
                 tracking_dir = os.path.abspath(str(tmpdir.join("mlruns")))
-                mlflow.set_tracking_uri("file://%s" % tracking_dir)
+                kiwi.set_tracking_uri("file://%s" % tracking_dir)
                 if should_start_run:
-                    mlflow.start_run()
+                    kiwi.start_run()
                 artifact_path = "model%d" % cnt
                 cnt += 1
                 sparkm.log_model(artifact_path=artifact_path, spark_model=spark_model_iris.model,
                                  dfs_tmpdir=dfs_tmp_dir)
                 model_uri = "runs:/{run_id}/{artifact_path}".format(
-                    run_id=mlflow.active_run().info.run_id,
+                    run_id=kiwi.active_run().info.run_id,
                     artifact_path=artifact_path)
 
                 # test reloaded model
@@ -313,8 +313,8 @@ def test_sparkml_model_log(tmpdir, spark_model_iris):
                 preds = [x.prediction for x in preds_df.select("prediction").collect()]
                 assert spark_model_iris.predictions == preds
             finally:
-                mlflow.end_run()
-                mlflow.set_tracking_uri(old_tracking_uri)
+                kiwi.end_run()
+                kiwi.set_tracking_uri(old_tracking_uri)
                 x = dfs_tmp_dir or sparkm.DFS_TMP
                 shutil.rmtree(x)
                 shutil.rmtree(tracking_dir)
@@ -323,7 +323,7 @@ def test_sparkml_model_log(tmpdir, spark_model_iris):
 @pytest.mark.large
 def test_sparkml_estimator_model_log(tmpdir, spark_model_estimator):
     # Print the coefficients and intercept for multinomial logistic regression
-    old_tracking_uri = mlflow.get_tracking_uri()
+    old_tracking_uri = kiwi.get_tracking_uri()
     cnt = 0
     # should_start_run tests whether or not calling log_model() automatically starts a run.
     for should_start_run in [False, True]:
@@ -331,9 +331,9 @@ def test_sparkml_estimator_model_log(tmpdir, spark_model_estimator):
             print("should_start_run =", should_start_run, "dfs_tmp_dir =", dfs_tmp_dir)
             try:
                 tracking_dir = os.path.abspath(str(tmpdir.join("mlruns")))
-                mlflow.set_tracking_uri("file://%s" % tracking_dir)
+                kiwi.set_tracking_uri("file://%s" % tracking_dir)
                 if should_start_run:
-                    mlflow.start_run()
+                    kiwi.start_run()
                 artifact_path = "model%d" % cnt
                 cnt += 1
                 sparkm.log_model(
@@ -341,7 +341,7 @@ def test_sparkml_estimator_model_log(tmpdir, spark_model_estimator):
                     spark_model=spark_model_estimator.model,
                     dfs_tmpdir=dfs_tmp_dir)
                 model_uri = "runs:/{run_id}/{artifact_path}".format(
-                    run_id=mlflow.active_run().info.run_id,
+                    run_id=kiwi.active_run().info.run_id,
                     artifact_path=artifact_path)
 
                 # test reloaded model
@@ -350,8 +350,8 @@ def test_sparkml_estimator_model_log(tmpdir, spark_model_estimator):
                 preds = [x.prediction for x in preds_df.select("prediction").collect()]
                 assert spark_model_estimator.predictions == preds
             finally:
-                mlflow.end_run()
-                mlflow.set_tracking_uri(old_tracking_uri)
+                kiwi.end_run()
+                kiwi.set_tracking_uri(old_tracking_uri)
                 x = dfs_tmp_dir or sparkm.DFS_TMP
                 shutil.rmtree(x)
                 shutil.rmtree(tracking_dir)
@@ -372,12 +372,12 @@ def test_log_model_calls_register_model(tmpdir, spark_model_iris):
     dfs_tmp_dir = os.path.join(str(tmpdir), "test")
     try:
         register_model_patch = mock.patch("mlflow.register_model")
-        with mlflow.start_run(), register_model_patch:
+        with kiwi.start_run(), register_model_patch:
             sparkm.log_model(artifact_path=artifact_path, spark_model=spark_model_iris.model,
                              dfs_tmpdir=dfs_tmp_dir, registered_model_name="AdsModel1")
             model_uri = "runs:/{run_id}/{artifact_path}".format(
-                run_id=mlflow.active_run().info.run_id, artifact_path=artifact_path)
-            mlflow.register_model.assert_called_once_with(model_uri, "AdsModel1")
+                run_id=kiwi.active_run().info.run_id, artifact_path=artifact_path)
+            kiwi.register_model.assert_called_once_with(model_uri, "AdsModel1")
     finally:
         x = dfs_tmp_dir or sparkm.DFS_TMP
         shutil.rmtree(x)
@@ -389,10 +389,10 @@ def test_log_model_no_registered_model_name(tmpdir, spark_model_iris):
     dfs_tmp_dir = os.path.join(str(tmpdir), "test")
     try:
         register_model_patch = mock.patch("mlflow.register_model")
-        with mlflow.start_run(), register_model_patch:
+        with kiwi.start_run(), register_model_patch:
             sparkm.log_model(artifact_path=artifact_path, spark_model=spark_model_iris.model,
                              dfs_tmpdir=dfs_tmp_dir)
-            mlflow.register_model.assert_not_called()
+            kiwi.register_model.assert_not_called()
     finally:
         x = dfs_tmp_dir or sparkm.DFS_TMP
         shutil.rmtree(x)
@@ -435,7 +435,7 @@ def test_sparkml_model_save_persists_specified_conda_env_in_mlflow_model_directo
 
 @pytest.mark.large
 def test_sparkml_model_save_accepts_conda_env_as_dict(spark_model_iris, model_path):
-    conda_env = dict(mlflow.spark.get_default_conda_env())
+    conda_env = dict(kiwi.spark.get_default_conda_env())
     conda_env["dependencies"].append("pytest")
     sparkm.save_model(spark_model=spark_model_iris.model,
                       path=model_path,
@@ -454,13 +454,13 @@ def test_sparkml_model_save_accepts_conda_env_as_dict(spark_model_iris, model_pa
 def test_sparkml_model_log_persists_specified_conda_env_in_mlflow_model_directory(
         spark_model_iris, model_path, spark_custom_env):
     artifact_path = "model"
-    with mlflow.start_run():
+    with kiwi.start_run():
         sparkm.log_model(
             spark_model=spark_model_iris.model,
             artifact_path=artifact_path,
             conda_env=spark_custom_env)
         model_uri = "runs:/{run_id}/{artifact_path}".format(
-            run_id=mlflow.active_run().info.run_id,
+            run_id=kiwi.active_run().info.run_id,
             artifact_path=artifact_path)
 
     model_path = _download_artifact_from_uri(artifact_uri=model_uri)
@@ -493,11 +493,11 @@ def test_sparkml_model_save_without_specified_conda_env_uses_default_env_with_ex
 def test_sparkml_model_log_without_specified_conda_env_uses_default_env_with_expected_dependencies(
         spark_model_iris):
     artifact_path = "model"
-    with mlflow.start_run():
+    with kiwi.start_run():
         sparkm.log_model(
             spark_model=spark_model_iris.model, artifact_path=artifact_path, conda_env=None)
         model_uri = "runs:/{run_id}/{artifact_path}".format(
-            run_id=mlflow.active_run().info.run_id,
+            run_id=kiwi.active_run().info.run_id,
             artifact_path=artifact_path)
 
     model_path = _download_artifact_from_uri(artifact_uri=model_uri)
@@ -521,11 +521,11 @@ def test_default_conda_env_strips_dev_suffix_from_pyspark_version(spark_model_ir
             default_conda_env_dev = sparkm.get_default_conda_env()
             assert (default_conda_env_dev == default_conda_env_standard)
 
-            with mlflow.start_run():
+            with kiwi.start_run():
                 sparkm.log_model(
                     spark_model=spark_model_iris.model, artifact_path="model", conda_env=None)
                 model_uri = "runs:/{run_id}/{artifact_path}".format(
-                    run_id=mlflow.active_run().info.run_id,
+                    run_id=kiwi.active_run().info.run_id,
                     artifact_path="model")
 
             model_path = _download_artifact_from_uri(artifact_uri=model_uri)
@@ -546,15 +546,15 @@ def test_default_conda_env_strips_dev_suffix_from_pyspark_version(spark_model_ir
 def test_mleap_model_log(spark_model_iris):
     artifact_path = "model"
     register_model_patch = mock.patch("mlflow.register_model")
-    with mlflow.start_run(), register_model_patch:
+    with kiwi.start_run(), register_model_patch:
         sparkm.log_model(spark_model=spark_model_iris.model,
                          sample_input=spark_model_iris.spark_df,
                          artifact_path=artifact_path,
                          registered_model_name="Model1")
         model_uri = "runs:/{run_id}/{artifact_path}".format(
-            run_id=mlflow.active_run().info.run_id,
+            run_id=kiwi.active_run().info.run_id,
             artifact_path=artifact_path)
-        mlflow.register_model.assert_called_once_with(model_uri, "Model1")
+        kiwi.register_model.assert_called_once_with(model_uri, "Model1")
 
     model_path = _download_artifact_from_uri(artifact_uri=model_uri)
     config_path = os.path.join(model_path, "MLmodel")

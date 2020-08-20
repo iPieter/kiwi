@@ -1,7 +1,7 @@
 import os
 
-import mlflow
-from mlflow.tracking.artifact_utils import _download_artifact_from_uri
+import kiwi
+from kiwi.tracking.artifact_utils import _download_artifact_from_uri
 
 
 def test_artifact_can_be_downloaded_from_absolute_uri_successfully(tmpdir):
@@ -12,9 +12,9 @@ def test_artifact_can_be_downloaded_from_absolute_uri_successfully(tmpdir):
         out.write(artifact_text)
 
     logged_artifact_path = "artifact"
-    with mlflow.start_run():
-        mlflow.log_artifact(local_path=local_artifact_path, artifact_path=logged_artifact_path)
-        artifact_uri = mlflow.get_artifact_uri(artifact_path=logged_artifact_path)
+    with kiwi.start_run():
+        kiwi.log_artifact(local_path=local_artifact_path, artifact_path=logged_artifact_path)
+        artifact_uri = kiwi.get_artifact_uri(artifact_path=logged_artifact_path)
 
     downloaded_artifact_path = os.path.join(
         _download_artifact_from_uri(artifact_uri), artifact_file_name)
@@ -32,9 +32,9 @@ def test_download_artifact_from_absolute_uri_persists_data_to_specified_output_d
         out.write(artifact_text)
 
     logged_artifact_subdir = "logged_artifact"
-    with mlflow.start_run():
-        mlflow.log_artifact(local_path=local_artifact_path, artifact_path=logged_artifact_subdir)
-        artifact_uri = mlflow.get_artifact_uri(artifact_path=logged_artifact_subdir)
+    with kiwi.start_run():
+        kiwi.log_artifact(local_path=local_artifact_path, artifact_path=logged_artifact_subdir)
+        artifact_uri = kiwi.get_artifact_uri(artifact_path=logged_artifact_subdir)
 
     artifact_output_path = tmpdir.join("artifact_output").strpath
     os.makedirs(artifact_output_path)

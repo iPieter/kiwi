@@ -2,8 +2,8 @@ import mock
 import pytest
 import git
 
-from mlflow.utils.mlflow_tags import MLFLOW_GIT_COMMIT
-from mlflow.tracking.context.git_context import GitRunContext
+from kiwi.utils.mlflow_tags import MLFLOW_GIT_COMMIT
+from kiwi.tracking.context.git_context import GitRunContext
 
 # pylint: disable=unused-argument
 

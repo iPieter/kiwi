@@ -2,9 +2,9 @@ import base64
 import json
 import pytest
 
-from mlflow.entities import RunInfo, RunData, Run, LifecycleStage, RunStatus, Metric, Param, RunTag
-from mlflow.exceptions import MlflowException
-from mlflow.utils.search_utils import SearchUtils
+from kiwi.entities import RunInfo, RunData, Run, LifecycleStage, RunStatus, Metric, Param, RunTag
+from kiwi.exceptions import MlflowException
+from kiwi.utils.search_utils import SearchUtils
 
 
 @pytest.mark.parametrize("filter_string, parsed_filter", [

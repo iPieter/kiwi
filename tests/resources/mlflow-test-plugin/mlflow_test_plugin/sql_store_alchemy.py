@@ -1,6 +1,6 @@
 from six.moves import urllib
 
-from mlflow.store.model_registry.sqlalchemy_store import SqlAlchemyStore
+from kiwi.store.model_registry.sqlalchemy_store import SqlAlchemyStore
 
 
 class PluginRegistrySqlAlchemyStore(SqlAlchemyStore):

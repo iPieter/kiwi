@@ -1,6 +1,6 @@
 import pytest
 
-from mlflow.utils import get_unique_resource_id
+from kiwi.utils import get_unique_resource_id
 
 
 def test_get_unique_resource_id_respects_max_length():

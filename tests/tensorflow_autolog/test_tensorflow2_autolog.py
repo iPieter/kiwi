@@ -8,9 +8,9 @@ import pandas as pd
 import tensorflow as tf
 from tensorflow.python.keras import layers
 
-import mlflow
-import mlflow.tensorflow
-import mlflow.keras
+import kiwi
+import kiwi.tensorflow
+import kiwi.keras
 
 import os
 
@@ -38,9 +38,9 @@ def random_one_hot_labels():
 @pytest.fixture(params=[True, False])
 def manual_run(request):
     if request.param:
-        mlflow.start_run()
+        kiwi.start_run()
     yield
-    mlflow.end_run()
+    kiwi.end_run()
 
 
 def create_tf_keras_model():
@@ -60,7 +60,7 @@ def create_tf_keras_model():
 @pytest.mark.parametrize('fit_variant', ['fit', 'fit_generator'])
 def test_tf_keras_autolog_ends_auto_created_run(random_train_data, random_one_hot_labels,
                                                 fit_variant):
-    mlflow.tensorflow.autolog()
+    kiwi.tensorflow.autolog()
 
     data = random_train_data
     labels = random_one_hot_labels
@@ -75,15 +75,15 @@ def test_tf_keras_autolog_ends_auto_created_run(random_train_data, random_one_ho
     else:
         model.fit(data, labels, epochs=10)
 
-    assert mlflow.active_run() is None
+    assert kiwi.active_run() is None
 
 
 @pytest.mark.large
 @pytest.mark.parametrize('fit_variant', ['fit', 'fit_generator'])
 def test_tf_keras_autolog_persists_manually_created_run(random_train_data, random_one_hot_labels,
                                                         fit_variant):
-    mlflow.tensorflow.autolog()
-    with mlflow.start_run() as run:
+    kiwi.tensorflow.autolog()
+    with kiwi.start_run() as run:
         data = random_train_data
         labels = random_one_hot_labels
 
@@ -97,13 +97,13 @@ def test_tf_keras_autolog_persists_manually_created_run(random_train_data, rando
         else:
             model.fit(data, labels, epochs=10)
 
-        assert mlflow.active_run()
-        assert mlflow.active_run().info.run_id == run.info.run_id
+        assert kiwi.active_run()
+        assert kiwi.active_run().info.run_id == run.info.run_id
 
 
 @pytest.fixture
 def tf_keras_random_data_run(random_train_data, random_one_hot_labels, manual_run, fit_variant):
-    mlflow.tensorflow.autolog(every_n_iter=5)
+    kiwi.tensorflow.autolog(every_n_iter=5)
 
     data = random_train_data
     labels = random_one_hot_labels
@@ -118,7 +118,7 @@ def tf_keras_random_data_run(random_train_data, random_one_hot_labels, manual_ru
     else:
         model.fit(data, labels, epochs=10, steps_per_epoch=1)
 
-    client = mlflow.tracking.MlflowClient()
+    client = kiwi.tracking.MlflowClient()
     return client.get_run(client.list_run_infos(experiment_id='0')[0].run_id)
 
 
@@ -149,7 +149,7 @@ def test_tf_keras_autolog_logs_expected_data(tf_keras_random_data_run):
     assert 'opt_epsilon' in data.params
     assert 'opt_amsgrad' in data.params
     assert data.params['opt_amsgrad'] == 'False'
-    client = mlflow.tracking.MlflowClient()
+    client = kiwi.tracking.MlflowClient()
     all_epoch_acc = client.get_metric_history(tf_keras_random_data_run.info.run_id, 'accuracy')
     assert all((x.step - 1) % 5 == 0 for x in all_epoch_acc)
     artifacts = client.list_artifacts(tf_keras_random_data_run.info.run_id)
@@ -160,12 +160,12 @@ def test_tf_keras_autolog_logs_expected_data(tf_keras_random_data_run):
 @pytest.mark.large
 @pytest.mark.parametrize('fit_variant', ['fit', 'fit_generator'])
 def test_tf_keras_autolog_model_can_load_from_artifact(tf_keras_random_data_run, random_train_data):
-    client = mlflow.tracking.MlflowClient()
+    client = kiwi.tracking.MlflowClient()
     artifacts = client.list_artifacts(tf_keras_random_data_run.info.run_id)
     artifacts = map(lambda x: x.path, artifacts)
     assert 'model' in artifacts
     assert 'tensorboard_logs' in artifacts
-    model = mlflow.keras.load_model("runs:/" + tf_keras_random_data_run.info.run_id +
+    model = kiwi.keras.load_model("runs:/" + tf_keras_random_data_run.info.run_id +
                                     "/model")
     model.predict(random_train_data)
 
@@ -173,7 +173,7 @@ def test_tf_keras_autolog_model_can_load_from_artifact(tf_keras_random_data_run,
 @pytest.fixture
 def tf_keras_random_data_run_with_callback(random_train_data, random_one_hot_labels, manual_run,
                                            callback, restore_weights, patience):
-    mlflow.tensorflow.autolog(every_n_iter=1)
+    kiwi.tensorflow.autolog(every_n_iter=1)
 
     data = random_train_data
     labels = random_one_hot_labels
@@ -189,7 +189,7 @@ def tf_keras_random_data_run_with_callback(random_train_data, random_one_hot_lab
 
     history = model.fit(data, labels, epochs=10, callbacks=[callback])
 
-    client = mlflow.tracking.MlflowClient()
+    client = kiwi.tracking.MlflowClient()
     return client.get_run(client.list_run_infos(experiment_id='0')[0].run_id), history, callback
 
 
@@ -213,7 +213,7 @@ def test_tf_keras_autolog_early_stop_logs(tf_keras_random_data_run_with_callback
     assert int(metrics['stopped_epoch']) - max(1, callback.patience) == restored_epoch
     assert 'loss' in history.history
     num_of_epochs = len(history.history['loss'])
-    client = mlflow.tracking.MlflowClient()
+    client = kiwi.tracking.MlflowClient()
     metric_history = client.get_metric_history(run.info.run_id, 'loss')
     # Check the test epoch numbers are correct
     assert num_of_epochs == max(1, callback.patience) + 1
@@ -242,7 +242,7 @@ def test_tf_keras_autolog_early_stop_no_stop_does_not_log(tf_keras_random_data_r
     assert 'restored_epoch' not in metrics
     assert 'loss' in history.history
     num_of_epochs = len(history.history['loss'])
-    client = mlflow.tracking.MlflowClient()
+    client = kiwi.tracking.MlflowClient()
     metric_history = client.get_metric_history(run.info.run_id, 'loss')
     # Check the test epoch numbers are correct
     assert num_of_epochs == 10
@@ -267,7 +267,7 @@ def test_tf_keras_autolog_early_stop_no_restore_doesnt_log(tf_keras_random_data_
     assert 'restored_epoch' not in metrics
     assert 'loss' in history.history
     num_of_epochs = len(history.history['loss'])
-    client = mlflow.tracking.MlflowClient()
+    client = kiwi.tracking.MlflowClient()
     metric_history = client.get_metric_history(run.info.run_id, 'loss')
     # Check the test epoch numbers are correct
     assert num_of_epochs == callback.patience + 1
@@ -290,7 +290,7 @@ def test_tf_keras_autolog_non_early_stop_callback_no_log(tf_keras_random_data_ru
     assert 'restored_epoch' not in metrics
     assert 'loss' in history.history
     num_of_epochs = len(history.history['loss'])
-    client = mlflow.tracking.MlflowClient()
+    client = kiwi.tracking.MlflowClient()
     metric_history = client.get_metric_history(run.info.run_id, 'loss')
     # Check the test epoch numbers are correct
     assert num_of_epochs == 10
@@ -305,7 +305,7 @@ def test_tf_keras_autolog_does_not_delete_logging_directory_for_tensorboard_call
     tensorboard_callback = tf.keras.callbacks.TensorBoard(
         tensorboard_callback_logging_dir_path, histogram_freq=0)
 
-    mlflow.tensorflow.autolog()
+    kiwi.tensorflow.autolog()
 
     data = random_train_data
     labels = random_one_hot_labels
@@ -329,9 +329,9 @@ def test_tf_keras_autolog_does_not_delete_logging_directory_for_tensorboard_call
 def test_tf_keras_autolog_logs_to_and_deletes_temporary_directory_when_tensorboard_callback_absent(
         tmpdir, random_train_data, random_one_hot_labels, fit_variant):
     import mock
-    from mlflow.tensorflow import _TensorBoardLogDir
+    from kiwi.tensorflow import _TensorBoardLogDir
 
-    mlflow.tensorflow.autolog()
+    kiwi.tensorflow.autolog()
 
     mock_log_dir_inst = _TensorBoardLogDir(location=str(tmpdir.mkdir("tb_logging")), is_temp=True)
     with mock.patch("mlflow.tensorflow._TensorBoardLogDir", autospec=True) as mock_log_dir_class:
@@ -403,27 +403,27 @@ def create_tf_estimator_model(dir, export):
 @pytest.mark.parametrize('export', [True, False])
 def test_tf_estimator_autolog_ends_auto_created_run(tmpdir, export):
     dir = tmpdir.mkdir("test")
-    mlflow.tensorflow.autolog()
+    kiwi.tensorflow.autolog()
     create_tf_estimator_model(str(dir), export)
-    assert mlflow.active_run() is None
+    assert kiwi.active_run() is None
 
 
 @pytest.mark.large
 @pytest.mark.parametrize('export', [True, False])
 def test_tf_estimator_autolog_persists_manually_created_run(tmpdir, export):
     dir = tmpdir.mkdir("test")
-    with mlflow.start_run() as run:
+    with kiwi.start_run() as run:
         create_tf_estimator_model(str(dir), export)
-        assert mlflow.active_run()
-        assert mlflow.active_run().info.run_id == run.info.run_id
+        assert kiwi.active_run()
+        assert kiwi.active_run().info.run_id == run.info.run_id
 
 
 @pytest.fixture
 def tf_estimator_random_data_run(tmpdir, manual_run, export):
     dir = tmpdir.mkdir("test")
-    mlflow.tensorflow.autolog()
+    kiwi.tensorflow.autolog()
     create_tf_estimator_model(str(dir), export)
-    client = mlflow.tracking.MlflowClient()
+    client = kiwi.tracking.MlflowClient()
     return client.get_run(client.list_run_infos(experiment_id='0')[0].run_id)
 
 
@@ -432,7 +432,7 @@ def tf_estimator_random_data_run(tmpdir, manual_run, export):
 def test_tf_estimator_autolog_logs_metrics(tf_estimator_random_data_run):
     assert 'loss' in tf_estimator_random_data_run.data.metrics
     assert 'steps' in tf_estimator_random_data_run.data.params
-    client = mlflow.tracking.MlflowClient()
+    client = kiwi.tracking.MlflowClient()
     metrics = client.get_metric_history(tf_estimator_random_data_run.info.run_id, 'loss')
     assert all((x.step-1) % 100 == 0 for x in metrics)
 
@@ -440,17 +440,17 @@ def test_tf_estimator_autolog_logs_metrics(tf_estimator_random_data_run):
 @pytest.mark.large
 @pytest.mark.parametrize('export', [True])
 def test_tf_estimator_autolog_model_can_load_from_artifact(tf_estimator_random_data_run):
-    client = mlflow.tracking.MlflowClient()
+    client = kiwi.tracking.MlflowClient()
     artifacts = client.list_artifacts(tf_estimator_random_data_run.info.run_id)
     artifacts = map(lambda x: x.path, artifacts)
     assert 'model' in artifacts
-    model = mlflow.tensorflow.load_model("runs:/" + tf_estimator_random_data_run.info.run_id +
+    model = kiwi.tensorflow.load_model("runs:/" + tf_estimator_random_data_run.info.run_id +
                                          "/model")
 
 
 @pytest.mark.large
 @pytest.mark.parametrize('export', [True, False])
 def test_duplicate_autolog_second_overrides(tf_estimator_random_data_run):
-    client = mlflow.tracking.MlflowClient()
+    client = kiwi.tracking.MlflowClient()
     metrics = client.get_metric_history(tf_estimator_random_data_run.info.run_id, 'loss')
     assert all((x.step - 1) % 4 == 0 for x in metrics)

@@ -23,18 +23,18 @@ import numpy as np
 import yaml
 import mock
 
-import mlflow
-import mlflow.keras
-import mlflow.pyfunc.scoring_server as pyfunc_scoring_server
-from mlflow import pyfunc
-from mlflow.exceptions import MlflowException
-from mlflow.models import Model, infer_signature
-from mlflow.models.utils import _read_example
-from mlflow.store.artifact.s3_artifact_repo import S3ArtifactRepository
-from mlflow.tracking.artifact_utils import _download_artifact_from_uri
-from mlflow.utils.environment import _mlflow_conda_env
-from mlflow.utils.file_utils import TempDir
-from mlflow.utils.model_utils import _get_flavor_configuration
+import kiwi
+import kiwi.keras
+import kiwi.pyfunc.scoring_server as pyfunc_scoring_server
+from kiwi import pyfunc
+from kiwi.exceptions import MlflowException
+from kiwi.models import Model, infer_signature
+from kiwi.models.utils import _read_example
+from kiwi.store.artifact.s3_artifact_repo import S3ArtifactRepository
+from kiwi.tracking.artifact_utils import _download_artifact_from_uri
+from kiwi.utils.environment import _mlflow_conda_env
+from kiwi.utils.file_utils import TempDir
+from kiwi.utils.model_utils import _get_flavor_configuration
 from tests.helper_functions import pyfunc_serve_and_score_model
 from tests.helper_functions import score_model_in_sagemaker_docker_container
 from tests.helper_functions import set_boto_credentials  # pylint: disable=unused-import
@@ -184,23 +184,23 @@ def test_that_keras_module_arg_works(model_path):
         x = MyModel("x123")
         path0 = os.path.join(model_path, "0")
         with pytest.raises(MlflowException):
-            mlflow.keras.save_model(x, path0)
-        mlflow.keras.save_model(x, path0, keras_module=FakeKerasModule)
-        y = mlflow.keras.load_model(path0)
+            kiwi.keras.save_model(x, path0)
+        kiwi.keras.save_model(x, path0, keras_module=FakeKerasModule)
+        y = kiwi.keras.load_model(path0)
         assert x == y
         path1 = os.path.join(model_path, "1")
-        mlflow.keras.save_model(x, path1, keras_module=FakeKerasModule.__name__)
-        z = mlflow.keras.load_model(path1)
+        kiwi.keras.save_model(x, path1, keras_module=FakeKerasModule.__name__)
+        z = kiwi.keras.load_model(path1)
         assert x == z
         # Tests model log
-        with mlflow.start_run() as active_run:
+        with kiwi.start_run() as active_run:
             with pytest.raises(MlflowException):
-                mlflow.keras.log_model(x, "model0")
-            mlflow.keras.log_model(x, "model0", keras_module=FakeKerasModule)
-            a = mlflow.keras.load_model("runs:/{}/model0".format(active_run.info.run_id))
+                kiwi.keras.log_model(x, "model0")
+            kiwi.keras.log_model(x, "model0", keras_module=FakeKerasModule)
+            a = kiwi.keras.load_model("runs:/{}/model0".format(active_run.info.run_id))
             assert x == a
-            mlflow.keras.log_model(x, "model1", keras_module=FakeKerasModule.__name__)
-            b = mlflow.keras.load_model("runs:/{}/model1".format(active_run.info.run_id))
+            kiwi.keras.log_model(x, "model1", keras_module=FakeKerasModule.__name__)
+            b = kiwi.keras.load_model("runs:/{}/model1".format(active_run.info.run_id))
             assert x == b
 
 
@@ -214,13 +214,13 @@ def test_model_save_load(build_model, model_path, data):
     else:
         model_path = os.path.join(model_path, "plain")
     expected = keras_model.predict(x)
-    mlflow.keras.save_model(keras_model, model_path)
+    kiwi.keras.save_model(keras_model, model_path)
     # Loading Keras model
-    model_loaded = mlflow.keras.load_model(model_path)
+    model_loaded = kiwi.keras.load_model(model_path)
     assert type(keras_model) == type(model_loaded)
     assert all(expected == model_loaded.predict(x))
     # Loading pyfunc model
-    pyfunc_loaded = mlflow.pyfunc.load_model(model_path)
+    pyfunc_loaded = kiwi.pyfunc.load_model(model_path)
     assert all(pyfunc_loaded.predict(x).values == expected)
 
     # pyfunc serve
@@ -248,9 +248,9 @@ def test_signature_and_examples_are_saved_correctly(model, data):
         for example in (None, example_):
             with TempDir() as tmp:
                 path = tmp.path("model")
-                mlflow.keras.save_model(model, path=path,
-                                        signature=signature,
-                                        input_example=example)
+                kiwi.keras.save_model(model, path=path,
+                                      signature=signature,
+                                      input_example=example)
                 mlflow_model = Model.load(path)
                 assert signature == mlflow_model.signature
                 if example is None:
@@ -263,10 +263,10 @@ def test_signature_and_examples_are_saved_correctly(model, data):
 def test_custom_model_save_load(custom_model, custom_layer, data, custom_predicted, model_path):
     x, _ = data
     custom_objects = {'MyDense': custom_layer}
-    mlflow.keras.save_model(custom_model, model_path, custom_objects=custom_objects)
+    kiwi.keras.save_model(custom_model, model_path, custom_objects=custom_objects)
 
     # Loading Keras model
-    model_loaded = mlflow.keras.load_model(model_path)
+    model_loaded = kiwi.keras.load_model(model_path)
     assert all(model_loaded.predict(x) == custom_predicted)
     # pyfunc serve
     scoring_response = pyfunc_serve_and_score_model(
@@ -280,7 +280,7 @@ def test_custom_model_save_load(custom_model, custom_layer, data, custom_predict
         rtol=1e-5,
         atol=1e-9)
     # Loading pyfunc model
-    pyfunc_loaded = mlflow.pyfunc.load_model(model_path)
+    pyfunc_loaded = kiwi.pyfunc.load_model(model_path)
     assert all(pyfunc_loaded.predict(x).values == custom_predicted)
     # test spark udf
     spark_udf_preds = score_model_as_udf(model_uri=os.path.abspath(model_path),
@@ -300,17 +300,17 @@ def test_custom_model_save_respects_user_custom_objects(custom_model, custom_lay
 
     incorrect_custom_objects = {'MyDense': DifferentCustomLayer()}
     correct_custom_objects = {'MyDense': custom_layer}
-    mlflow.keras.save_model(custom_model, model_path, custom_objects=incorrect_custom_objects)
-    model_loaded = mlflow.keras.load_model(model_path, custom_objects=correct_custom_objects)
+    kiwi.keras.save_model(custom_model, model_path, custom_objects=incorrect_custom_objects)
+    model_loaded = kiwi.keras.load_model(model_path, custom_objects=correct_custom_objects)
     assert model_loaded is not None
     with pytest.raises(TypeError):
-        model_loaded = mlflow.keras.load_model(model_path)
+        model_loaded = kiwi.keras.load_model(model_path)
 
 
 @pytest.mark.large
 def test_model_load_from_remote_uri_succeeds(model, model_path, mock_s3_bucket, data, predicted):
     x, _ = data
-    mlflow.keras.save_model(model, model_path)
+    kiwi.keras.save_model(model, model_path)
 
     artifact_root = "s3://{bucket_name}".format(bucket_name=mock_s3_bucket)
     artifact_path = "model"
@@ -318,7 +318,7 @@ def test_model_load_from_remote_uri_succeeds(model, model_path, mock_s3_bucket, 
     artifact_repo.log_artifacts(model_path, artifact_path=artifact_path)
 
     model_uri = artifact_root + "/" + artifact_path
-    model_loaded = mlflow.keras.load_model(model_uri=model_uri)
+    model_loaded = kiwi.keras.load_model(model_uri=model_uri)
     assert all(model_loaded.predict(x) == predicted)
 
 
@@ -329,47 +329,47 @@ def test_model_log(model, data, predicted):
     for should_start_run in [False, True]:
         try:
             if should_start_run:
-                mlflow.start_run()
+                kiwi.start_run()
             artifact_path = "keras_model"
-            mlflow.keras.log_model(model, artifact_path=artifact_path)
+            kiwi.keras.log_model(model, artifact_path=artifact_path)
             model_uri = "runs:/{run_id}/{artifact_path}".format(
-                run_id=mlflow.active_run().info.run_id,
+                run_id=kiwi.active_run().info.run_id,
                 artifact_path=artifact_path)
 
             # Load model
-            model_loaded = mlflow.keras.load_model(model_uri=model_uri)
+            model_loaded = kiwi.keras.load_model(model_uri=model_uri)
             assert all(model_loaded.predict(x) == predicted)
 
             # Loading pyfunc model
-            pyfunc_loaded = mlflow.pyfunc.load_model(model_uri=model_uri)
+            pyfunc_loaded = kiwi.pyfunc.load_model(model_uri=model_uri)
             assert all(pyfunc_loaded.predict(x).values == predicted)
         finally:
-            mlflow.end_run()
+            kiwi.end_run()
 
 
 def test_log_model_calls_register_model(model):
     artifact_path = "model"
     register_model_patch = mock.patch("mlflow.register_model")
-    with mlflow.start_run(), register_model_patch:
-        mlflow.keras.log_model(model, artifact_path=artifact_path,
-                               registered_model_name="AdsModel1")
-        model_uri = "runs:/{run_id}/{artifact_path}".format(run_id=mlflow.active_run().info.run_id,
+    with kiwi.start_run(), register_model_patch:
+        kiwi.keras.log_model(model, artifact_path=artifact_path,
+                             registered_model_name="AdsModel1")
+        model_uri = "runs:/{run_id}/{artifact_path}".format(run_id=kiwi.active_run().info.run_id,
                                                             artifact_path=artifact_path)
-        mlflow.register_model.assert_called_once_with(model_uri, "AdsModel1")
+        kiwi.register_model.assert_called_once_with(model_uri, "AdsModel1")
 
 
 def test_log_model_no_registered_model_name(model):
     artifact_path = "model"
     register_model_patch = mock.patch("mlflow.register_model")
-    with mlflow.start_run(), register_model_patch:
-        mlflow.keras.log_model(model, artifact_path=artifact_path)
-        mlflow.register_model.assert_not_called()
+    with kiwi.start_run(), register_model_patch:
+        kiwi.keras.log_model(model, artifact_path=artifact_path)
+        kiwi.register_model.assert_not_called()
 
 
 @pytest.mark.large
 def test_model_save_persists_specified_conda_env_in_mlflow_model_directory(
         model, model_path, keras_custom_env):
-    mlflow.keras.save_model(keras_model=model, path=model_path, conda_env=keras_custom_env)
+    kiwi.keras.save_model(keras_model=model, path=model_path, conda_env=keras_custom_env)
 
     pyfunc_conf = _get_flavor_configuration(model_path=model_path, flavor_name=pyfunc.FLAVOR_NAME)
     saved_conda_env_path = os.path.join(model_path, pyfunc_conf[pyfunc.ENV])
@@ -385,9 +385,9 @@ def test_model_save_persists_specified_conda_env_in_mlflow_model_directory(
 
 @pytest.mark.large
 def test_model_save_accepts_conda_env_as_dict(model, model_path):
-    conda_env = dict(mlflow.keras.get_default_conda_env())
+    conda_env = dict(kiwi.keras.get_default_conda_env())
     conda_env["dependencies"].append("pytest")
-    mlflow.keras.save_model(keras_model=model, path=model_path, conda_env=conda_env)
+    kiwi.keras.save_model(keras_model=model, path=model_path, conda_env=conda_env)
 
     pyfunc_conf = _get_flavor_configuration(model_path=model_path, flavor_name=pyfunc.FLAVOR_NAME)
     saved_conda_env_path = os.path.join(model_path, pyfunc_conf[pyfunc.ENV])
@@ -401,11 +401,11 @@ def test_model_save_accepts_conda_env_as_dict(model, model_path):
 @pytest.mark.large
 def test_model_log_persists_specified_conda_env_in_mlflow_model_directory(model, keras_custom_env):
     artifact_path = "model"
-    with mlflow.start_run():
-        mlflow.keras.log_model(
+    with kiwi.start_run():
+        kiwi.keras.log_model(
             keras_model=model, artifact_path=artifact_path, conda_env=keras_custom_env)
         model_path = _download_artifact_from_uri("runs:/{run_id}/{artifact_path}".format(
-            run_id=mlflow.active_run().info.run_id, artifact_path=artifact_path))
+            run_id=kiwi.active_run().info.run_id, artifact_path=artifact_path))
 
     pyfunc_conf = _get_flavor_configuration(model_path=model_path, flavor_name=pyfunc.FLAVOR_NAME)
     saved_conda_env_path = os.path.join(model_path, pyfunc_conf[pyfunc.ENV])
@@ -422,30 +422,30 @@ def test_model_log_persists_specified_conda_env_in_mlflow_model_directory(model,
 @pytest.mark.large
 def test_model_save_without_specified_conda_env_uses_default_env_with_expected_dependencies(
         model, model_path):
-    mlflow.keras.save_model(keras_model=model, path=model_path, conda_env=None)
+    kiwi.keras.save_model(keras_model=model, path=model_path, conda_env=None)
     pyfunc_conf = _get_flavor_configuration(model_path=model_path, flavor_name=pyfunc.FLAVOR_NAME)
     conda_env_path = os.path.join(model_path, pyfunc_conf[pyfunc.ENV])
     with open(conda_env_path, "r") as f:
         conda_env = yaml.safe_load(f)
 
-    assert conda_env == mlflow.keras.get_default_conda_env()
+    assert conda_env == kiwi.keras.get_default_conda_env()
 
 
 @pytest.mark.large
 def test_model_log_without_specified_conda_env_uses_default_env_with_expected_dependencies(
         model):
     artifact_path = "model"
-    with mlflow.start_run():
-        mlflow.keras.log_model(keras_model=model, artifact_path=artifact_path, conda_env=None)
+    with kiwi.start_run():
+        kiwi.keras.log_model(keras_model=model, artifact_path=artifact_path, conda_env=None)
         model_path = _download_artifact_from_uri("runs:/{run_id}/{artifact_path}".format(
-            run_id=mlflow.active_run().info.run_id, artifact_path=artifact_path))
+            run_id=kiwi.active_run().info.run_id, artifact_path=artifact_path))
 
     pyfunc_conf = _get_flavor_configuration(model_path=model_path, flavor_name=pyfunc.FLAVOR_NAME)
     conda_env_path = os.path.join(model_path, pyfunc_conf[pyfunc.ENV])
     with open(conda_env_path, "r") as f:
         conda_env = yaml.safe_load(f)
 
-    assert conda_env == mlflow.keras.get_default_conda_env()
+    assert conda_env == kiwi.keras.get_default_conda_env()
 
 
 @pytest.mark.large
@@ -455,30 +455,30 @@ def test_model_load_succeeds_with_missing_data_key_when_data_exists_at_default_p
     This is a backwards compatibility test to ensure that models saved in MLflow version <= 0.8.0
     can be loaded successfully. These models are missing the `data` flavor configuration key.
     """
-    mlflow.keras.save_model(keras_model=model, path=model_path)
+    kiwi.keras.save_model(keras_model=model, path=model_path)
     shutil.move(
         os.path.join(model_path, 'data', 'model.h5'),
         os.path.join(model_path, 'model.h5'))
     model_conf_path = os.path.join(model_path, "MLmodel")
     model_conf = Model.load(model_conf_path)
-    flavor_conf = model_conf.flavors.get(mlflow.keras.FLAVOR_NAME, None)
+    flavor_conf = model_conf.flavors.get(kiwi.keras.FLAVOR_NAME, None)
     assert flavor_conf is not None
     del flavor_conf['data']
     model_conf.save(model_conf_path)
 
-    model_loaded = mlflow.keras.load_model(model_path)
+    model_loaded = kiwi.keras.load_model(model_path)
     assert all(model_loaded.predict(data[0]) == predicted)
 
 
 @pytest.mark.release
 def test_sagemaker_docker_model_scoring_with_default_conda_env(model, model_path, data, predicted):
-    mlflow.keras.save_model(keras_model=model, path=model_path, conda_env=None)
+    kiwi.keras.save_model(keras_model=model, path=model_path, conda_env=None)
 
     scoring_response = score_model_in_sagemaker_docker_container(
         model_uri=model_path,
         data=data[0],
         content_type=pyfunc_scoring_server.CONTENT_TYPE_JSON_SPLIT_ORIENTED,
-        flavor=mlflow.pyfunc.FLAVOR_NAME,
+        flavor=kiwi.pyfunc.FLAVOR_NAME,
         activity_polling_timeout_seconds=500)
     deployed_model_preds = pd.DataFrame(json.loads(scoring_response.content))
 

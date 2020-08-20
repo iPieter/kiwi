@@ -5,15 +5,15 @@ import mock
 import tempfile
 import uuid
 
-import mlflow
-import mlflow.db
-import mlflow.store.db.base_sql_model
-from mlflow.entities.model_registry import RegisteredModel, ModelVersion, \
+import kiwi
+import kiwi.db
+import kiwi.store.db.base_sql_model
+from kiwi.entities.model_registry import RegisteredModel, ModelVersion, \
     RegisteredModelTag, ModelVersionTag
-from mlflow.exceptions import MlflowException
-from mlflow.protos.databricks_pb2 import ErrorCode, RESOURCE_DOES_NOT_EXIST, \
+from kiwi.exceptions import MlflowException
+from kiwi.protos.databricks_pb2 import ErrorCode, RESOURCE_DOES_NOT_EXIST, \
     INVALID_PARAMETER_VALUE, RESOURCE_ALREADY_EXISTS
-from mlflow.store.model_registry.sqlalchemy_store import SqlAlchemyStore
+from kiwi.store.model_registry.sqlalchemy_store import SqlAlchemyStore
 from tests.helper_functions import random_str
 
 DB_URI = 'sqlite:///'
@@ -32,7 +32,7 @@ class TestSqlAlchemyStoreSqlite(unittest.TestCase):
         self.store = self._get_store(self.db_url)
 
     def tearDown(self):
-        mlflow.store.db.base_sql_model.Base.metadata.drop_all(self.store.engine)
+        kiwi.store.db.base_sql_model.Base.metadata.drop_all(self.store.engine)
         os.remove(self.temp_dbfile)
 
     def _rm_maker(self, name, tags=None):

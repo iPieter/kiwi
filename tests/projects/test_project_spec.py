@@ -3,8 +3,8 @@ import os
 import pytest
 import textwrap
 
-from mlflow.exceptions import ExecutionException
-from mlflow.projects import _project_spec
+from kiwi.exceptions import ExecutionException
+from kiwi.projects import _project_spec
 from tests.projects.utils import load_project
 
 

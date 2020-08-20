@@ -9,23 +9,23 @@ import pandas as pd
 import pytest
 from six.moves import reload_module as reload
 
-import mlflow
-import mlflow.tracking.context.registry
-import mlflow.tracking.fluent
-from mlflow.entities import (LifecycleStage, Metric, Param, Run, RunData,
-                             RunInfo, RunStatus, RunTag, SourceType, ViewType)
-from mlflow.exceptions import MlflowException
-from mlflow.store.entities.paged_list import PagedList
-from mlflow.tracking.client import MlflowClient
-from mlflow.tracking.fluent import (_EXPERIMENT_ID_ENV_VAR,
-                                    _EXPERIMENT_NAME_ENV_VAR, _RUN_ID_ENV_VAR,
-                                    SEARCH_MAX_RESULTS_PANDAS,
-                                    _get_experiment_id,
-                                    _get_experiment_id_from_env,
-                                    _get_paginated_runs, search_runs,
-                                    set_experiment, start_run, get_run)
-from mlflow.utils import mlflow_tags
-from mlflow.utils.file_utils import TempDir
+import kiwi
+import kiwi.tracking.context.registry
+import kiwi.tracking.fluent
+from kiwi.entities import (LifecycleStage, Metric, Param, Run, RunData,
+                           RunInfo, RunStatus, RunTag, SourceType, ViewType)
+from kiwi.exceptions import MlflowException
+from kiwi.store.entities.paged_list import PagedList
+from kiwi.tracking.client import MlflowClient
+from kiwi.tracking.fluent import (_EXPERIMENT_ID_ENV_VAR,
+                                  _EXPERIMENT_NAME_ENV_VAR, _RUN_ID_ENV_VAR,
+                                  SEARCH_MAX_RESULTS_PANDAS,
+                                  _get_experiment_id,
+                                  _get_experiment_id_from_env,
+                                  _get_paginated_runs, search_runs,
+                                  set_experiment, start_run, get_run)
+from kiwi.utils import mlflow_tags
+from kiwi.utils.file_utils import TempDir
 
 # pylint: disable=unused-argument
 
@@ -81,22 +81,22 @@ def reset_experiment_id():
     """
     yield
     HelperEnv.set_values()
-    mlflow.tracking.fluent._active_experiment_id = None
+    kiwi.tracking.fluent._active_experiment_id = None
 
 
 @pytest.fixture(autouse=True)
 def reload_context_registry():
     """Reload the context registry module to clear caches."""
-    reload(mlflow.tracking.context.registry)
+    reload(kiwi.tracking.context.registry)
 
 
 def test_all_fluent_apis_are_included_in_dunder_all():
     def _is_function_or_class(obj):
         return callable(obj) or inspect.isclass(obj)
 
-    apis = [a for a in dir(mlflow)
-            if _is_function_or_class(getattr(mlflow, a)) and not a.startswith('_')]
-    assert sorted(apis) == sorted(mlflow.__all__)
+    apis = [a for a in dir(kiwi)
+            if _is_function_or_class(getattr(kiwi, a)) and not a.startswith('_')]
+    assert sorted(apis) == sorted(kiwi.__all__)
 
 
 def test_get_experiment_id_from_env():
@@ -113,7 +113,7 @@ def test_get_experiment_id_from_env():
     # set only name
     with TempDir(chdr=True):
         name = "random experiment %d" % random.randint(1, 1e6)
-        exp_id = mlflow.create_experiment(name)
+        exp_id = kiwi.create_experiment(name)
         assert exp_id is not None
         HelperEnv.set_values(name=name)
         HelperEnv.assert_values(None, name)
@@ -122,7 +122,7 @@ def test_get_experiment_id_from_env():
     # set both: assert that name variable takes precedence
     with TempDir(chdr=True):
         name = "random experiment %d" % random.randint(1, 1e6)
-        exp_id = mlflow.create_experiment(name)
+        exp_id = kiwi.create_experiment(name)
         assert exp_id is not None
         random_id = random.randint(1, 1e6)
         HelperEnv.set_values(name=name, experiment_id=random_id)
@@ -134,9 +134,9 @@ def test_get_experiment_id_with_active_experiment_returns_active_experiment_id()
     # Create a new experiment and set that as active experiment
     with TempDir(chdr=True):
         name = "Random experiment %d" % random.randint(1, 1e6)
-        exp_id = mlflow.create_experiment(name)
+        exp_id = kiwi.create_experiment(name)
         assert exp_id is not None
-        mlflow.set_experiment(name)
+        kiwi.set_experiment(name)
         assert _get_experiment_id() == exp_id
 
 
@@ -157,8 +157,8 @@ def test_get_experiment_id_in_databricks_detects_notebook_id_by_default():
 def test_get_experiment_id_in_databricks_with_active_experiment_returns_active_experiment_id():
     with TempDir(chdr=True):
         exp_name = "random experiment %d" % random.randint(1, 1e6)
-        exp_id = mlflow.create_experiment(exp_name)
-        mlflow.set_experiment(exp_name)
+        exp_id = kiwi.create_experiment(exp_name)
+        kiwi.set_experiment(exp_name)
         notebook_id = str(int(exp_id) + 73)
 
     with mock.patch("mlflow.tracking.fluent.is_in_databricks_notebook") as notebook_detection_mock,\
@@ -173,7 +173,7 @@ def test_get_experiment_id_in_databricks_with_active_experiment_returns_active_e
 def test_get_experiment_id_in_databricks_with_experiment_defined_in_env_returns_env_experiment_id():
     with TempDir(chdr=True):
         exp_name = "random experiment %d" % random.randint(1, 1e6)
-        exp_id = mlflow.create_experiment(exp_name)
+        exp_id = kiwi.create_experiment(exp_name)
         notebook_id = str(int(exp_id) + 73)
         HelperEnv.set_values(experiment_id=exp_id)
 
@@ -189,9 +189,9 @@ def test_get_experiment_id_in_databricks_with_experiment_defined_in_env_returns_
 def test_get_experiment_by_id():
     with TempDir(chdr=True):
         name = "Random experiment %d" % random.randint(1, 1e6)
-        exp_id = mlflow.create_experiment(name)
+        exp_id = kiwi.create_experiment(name)
 
-        experiment = mlflow.get_experiment(exp_id)
+        experiment = kiwi.get_experiment(exp_id)
         print(experiment)
         assert experiment.experiment_id == exp_id
 
@@ -199,9 +199,9 @@ def test_get_experiment_by_id():
 def test_get_experiment_by_name():
     with TempDir(chdr=True):
         name = "Random experiment %d" % random.randint(1, 1e6)
-        exp_id = mlflow.create_experiment(name)
+        exp_id = kiwi.create_experiment(name)
 
-        experiment = mlflow.get_experiment_by_name(name)
+        experiment = kiwi.get_experiment_by_name(name)
         assert experiment.experiment_id == exp_id
 
 
@@ -480,7 +480,7 @@ def test_search_runs_no_arguments():
                                           return_value=[])
     with experiment_id_patch, get_paginated_runs_patch:
         search_runs()
-        mlflow.tracking.fluent._get_paginated_runs.assert_called_once_with(
+        kiwi.tracking.fluent._get_paginated_runs.assert_called_once_with(
             mock_experiment_id, '', ViewType.ACTIVE_ONLY, SEARCH_MAX_RESULTS_PANDAS, None
         )
 
@@ -611,15 +611,15 @@ def test_delete_tag():
     Confirm that fluent API delete tags actually works
     :return:
     """
-    mlflow.set_tag('a', 'b')
-    run = MlflowClient().get_run(mlflow.active_run().info.run_id)
+    kiwi.set_tag('a', 'b')
+    run = MlflowClient().get_run(kiwi.active_run().info.run_id)
     print(run.info.run_id)
     assert 'a' in run.data.tags
-    mlflow.delete_tag('a')
-    run = MlflowClient().get_run(mlflow.active_run().info.run_id)
+    kiwi.delete_tag('a')
+    run = MlflowClient().get_run(kiwi.active_run().info.run_id)
     assert 'a' not in run.data.tags
     with pytest.raises(MlflowException):
-        mlflow.delete_tag('a')
+        kiwi.delete_tag('a')
     with pytest.raises(MlflowException):
-        mlflow.delete_tag('b')
-    mlflow.end_run()
+        kiwi.delete_tag('b')
+    kiwi.end_run()

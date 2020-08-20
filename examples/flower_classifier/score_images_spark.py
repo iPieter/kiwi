@@ -14,9 +14,9 @@ import click
 
 import pyspark
 
-import mlflow
-import mlflow.pyfunc
-from mlflow.utils import cli_args
+import kiwi
+import kiwi.pyfunc
+from kiwi.utils import cli_args
 
 from pyspark.sql.types import *
 from pyspark.sql.types import Row
@@ -44,16 +44,16 @@ def score_model(spark, data_path, model_uri):
     else:
         filenames = [data_path]
 
-    image_classifier_udf = mlflow.pyfunc.spark_udf(spark=spark,
-                                                   model_uri=model_uri,
-                                                   result_type=ArrayType(StringType()))
+    image_classifier_udf = kiwi.pyfunc.spark_udf(spark=spark,
+                                                 model_uri=model_uri,
+                                                 result_type=ArrayType(StringType()))
 
     image_df = read_images(spark, filenames)
 
     raw_preds = image_df.withColumn("prediction", image_classifier_udf("image")).select(
         ["filename", "prediction"]).toPandas()
     # load the pyfunc model to get our domain
-    pyfunc_model = mlflow.pyfunc.load_pyfunc(model_uri=model_uri)
+    pyfunc_model = kiwi.pyfunc.load_pyfunc(model_uri=model_uri)
     preds = pd.DataFrame(raw_preds["filename"], index=raw_preds.index)
     preds[pyfunc_model._column_names] = pd.DataFrame(raw_preds['prediction'].values.tolist(),
                                                      columns=pyfunc_model._column_names,

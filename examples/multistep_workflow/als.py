@@ -5,8 +5,8 @@ an mlflow artifact called 'als-model'.
 """
 import click
 
-import mlflow
-import mlflow.spark
+import kiwi
+import kiwi.spark
 
 import pyspark
 from pyspark.ml import Pipeline
@@ -31,8 +31,8 @@ def train_als(ratings_data, split_prop, max_iter, reg_param, rank, cold_start_st
     training_df.cache()
     test_df.cache()
 
-    mlflow.log_metric("training_nrows", training_df.count())
-    mlflow.log_metric("test_nrows", test_df.count())
+    kiwi.log_metric("training_nrows", training_df.count())
+    kiwi.log_metric("test_nrows", test_df.count())
 
     print('Training: {0}, test: {1}'.format(training_df.count(), test_df.count()))
 
@@ -58,9 +58,9 @@ def train_als(ratings_data, split_prop, max_iter, reg_param, rank, cold_start_st
 
     print('The model had a MSE on the test set of {0}'.format(test_mse))
     print('The model had a MSE on the (train) set of {0}'.format(train_mse))
-    mlflow.log_metric("test_mse", test_mse)
-    mlflow.log_metric("train_mse", train_mse)
-    mlflow.spark.log_model(als_model, "als-model")
+    kiwi.log_metric("test_mse", test_mse)
+    kiwi.log_metric("train_mse", train_mse)
+    kiwi.spark.log_model(als_model, "als-model")
 
 
 if __name__ == '__main__':

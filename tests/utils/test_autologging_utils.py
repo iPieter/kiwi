@@ -1,6 +1,6 @@
-import mlflow
+import kiwi
 import pytest
-from mlflow.utils.autologging_utils import get_unspecified_default_args, \
+from kiwi.utils.autologging_utils import get_unspecified_default_args, \
     log_fn_args_as_params
 
 
@@ -69,9 +69,9 @@ def test_get_three_unspecified_default_args(user_args, user_kwargs, all_param_na
 
 @pytest.fixture
 def start_run():
-    mlflow.start_run()
+    kiwi.start_run()
     yield
-    mlflow.end_run()
+    kiwi.end_run()
 
 
 def dummy_fn(arg1, arg2='value2', arg3='value3'):  # pylint: disable=W0613
@@ -91,8 +91,8 @@ log_test_args = [([], {'arg1': 'value_x', 'arg2': 'value_y'}, ['value_x', 'value
 @pytest.mark.parametrize('args,kwargs,expected', log_test_args)
 def test_log_fn_args_as_params(args, kwargs, expected, start_run):  # pylint: disable=W0613
     log_fn_args_as_params(dummy_fn, args, kwargs)
-    client = mlflow.tracking.MlflowClient()
-    params = client.get_run(mlflow.active_run().info.run_id).data.params
+    client = kiwi.tracking.MlflowClient()
+    params = client.get_run(kiwi.active_run().info.run_id).data.params
     for arg, value in zip(['arg1', 'arg2', 'arg3'], expected):
         assert arg in params
         assert params[arg] == value
@@ -102,6 +102,6 @@ def test_log_fn_args_as_params(args, kwargs, expected, start_run):  # pylint: di
 def test_log_fn_args_as_params_ignores_unwanted_parameters(start_run):  # pylint: disable=W0613
     args, kwargs, unlogged = ('arg1', {'arg2': 'value'}, ['arg1', 'arg2', 'arg3'])
     log_fn_args_as_params(dummy_fn, args, kwargs, unlogged)
-    client = mlflow.tracking.MlflowClient()
-    params = client.get_run(mlflow.active_run().info.run_id).data.params
+    client = kiwi.tracking.MlflowClient()
+    params = client.get_run(kiwi.active_run().info.run_id).data.params
     assert len(params.keys()) == 0

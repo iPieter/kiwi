@@ -1,10 +1,10 @@
 import json
 
-from mlflow.entities import Experiment, Metric
-from mlflow.protos.service_pb2 import Experiment as ProtoExperiment
-from mlflow.protos.service_pb2 import Metric as ProtoMetric
+from kiwi.entities import Experiment, Metric
+from kiwi.protos.service_pb2 import Experiment as ProtoExperiment
+from kiwi.protos.service_pb2 import Metric as ProtoMetric
 
-from mlflow.utils.proto_json_utils import message_to_json, parse_dict, _stringify_all_experiment_ids
+from kiwi.utils.proto_json_utils import message_to_json, parse_dict, _stringify_all_experiment_ids
 
 
 def test_message_to_json():

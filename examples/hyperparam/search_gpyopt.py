@@ -18,12 +18,12 @@ import matplotlib
 from matplotlib import pyplot as plt
 import numpy as np
 
-import mlflow
-import mlflow.sklearn
-import mlflow.tracking
-import mlflow.projects
-from mlflow.tracking.client import MlflowClient
-from mlflow.utils.file_utils import TempDir
+import kiwi
+import kiwi.sklearn
+import kiwi.tracking
+import kiwi.projects
+from kiwi.tracking.client import MlflowClient
+from kiwi.utils.file_utils import TempDir
 
 _inf = np.finfo(np.float64).max
 
@@ -56,7 +56,7 @@ def run(training_data, max_runs, batch_size, max_p, epochs, metric, gpy_model, g
         {'name': 'momentum', 'type': 'continuous', 'domain': (0.0, 1.0)},
     ]
     # create random file to store run ids of the training tasks
-    tracking_client = mlflow.tracking.MlflowClient()
+    tracking_client = kiwi.tracking.MlflowClient()
 
     def new_eval(nepochs,
                  experiment_id,
@@ -89,8 +89,8 @@ def run(training_data, max_runs, batch_size, max_p, epochs, metric, gpy_model, g
             :return: The metric value evaluated on the validation data.
             """
             lr, momentum = params[0]
-            with mlflow.start_run(nested=True) as child_run:
-                p = mlflow.projects.run(
+            with kiwi.start_run(nested=True) as child_run:
+                p = kiwi.projects.run(
                     run_id=child_run.info.run_id,
                     uri=".",
                     entry_point="train",
@@ -122,7 +122,7 @@ def run(training_data, max_runs, batch_size, max_p, epochs, metric, gpy_model, g
                 valid_loss = null_valid_loss
                 test_loss = null_test_loss
 
-            mlflow.log_metrics({
+            kiwi.log_metrics({
                 "train_{}".format(metric): train_loss,
                 "val_{}".format(metric): valid_loss,
                 "test_{}".format(metric): test_loss
@@ -135,7 +135,7 @@ def run(training_data, max_runs, batch_size, max_p, epochs, metric, gpy_model, g
 
         return eval
 
-    with mlflow.start_run() as run:
+    with kiwi.start_run() as run:
         experiment_id = run.info.experiment_id
         # Evaluate null model first.
         # We use null model (predict everything to the mean) as a reasonable upper bound on loss.
@@ -174,9 +174,9 @@ def run(training_data, max_runs, batch_size, max_p, epochs, metric, gpy_model, g
             myProblem.plot_acquisition(filename=acquisition_plot)
             myProblem.plot_convergence(filename=convergence_plot)
             if os.path.exists(convergence_plot):
-                mlflow.log_artifact(convergence_plot, "converegence_plot")
+                kiwi.log_artifact(convergence_plot, "converegence_plot")
             if os.path.exists(acquisition_plot):
-                mlflow.log_artifact(acquisition_plot, "acquisition_plot")
+                kiwi.log_artifact(acquisition_plot, "acquisition_plot")
 
         # find the best run, log its metrics as the final metrics of this run.
         client = MlflowClient()
@@ -193,8 +193,8 @@ def run(training_data, max_runs, batch_size, max_p, epochs, metric, gpy_model, g
                 best_val_train = r.data.metrics["train_rmse"]
                 best_val_valid = r.data.metrics["val_rmse"]
                 best_val_test = r.data.metrics["test_rmse"]
-        mlflow.set_tag("best_run", best_run.info.run_id)
-        mlflow.log_metrics({
+        kiwi.set_tag("best_run", best_run.info.run_id)
+        kiwi.log_metrics({
             "train_{}".format(metric): best_val_train,
             "val_{}".format(metric): best_val_valid,
             "test_{}".format(metric): best_val_test

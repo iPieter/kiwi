@@ -13,13 +13,13 @@ import subprocess
 from six.moves.urllib.request import url2pathname
 from six.moves.urllib.parse import urlparse, unquote
 
-from mlflow.cli import run, server, ui
-from mlflow.server import handlers
-from mlflow import experiments
-from mlflow.store.tracking.sqlalchemy_store import SqlAlchemyStore
-from mlflow.store.tracking.file_store import FileStore
-from mlflow.exceptions import MlflowException
-from mlflow.entities import ViewType
+from kiwi.cli import run, server, ui
+from kiwi.server import handlers
+from kiwi import experiments
+from kiwi.store.tracking.sqlalchemy_store import SqlAlchemyStore
+from kiwi.store.tracking.file_store import FileStore
+from kiwi.exceptions import MlflowException
+from kiwi.entities import ViewType
 
 
 def test_server_static_prefix_validation():

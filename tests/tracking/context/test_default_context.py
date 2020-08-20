@@ -1,9 +1,9 @@
 import mock
 import pytest
 
-from mlflow.entities import SourceType
-from mlflow.utils.mlflow_tags import MLFLOW_USER, MLFLOW_SOURCE_NAME, MLFLOW_SOURCE_TYPE
-from mlflow.tracking.context.default_context import DefaultRunContext
+from kiwi.entities import SourceType
+from kiwi.utils.mlflow_tags import MLFLOW_USER, MLFLOW_SOURCE_NAME, MLFLOW_SOURCE_TYPE
+from kiwi.tracking.context.default_context import DefaultRunContext
 
 # pylint: disable=unused-argument
 

@@ -14,10 +14,10 @@ import sys
 import pandas as pd
 import pytest
 
-import mlflow
-import mlflow.pyfunc.scoring_server as pyfunc_scoring_server
-import mlflow.pyfunc
-from mlflow.utils.file_utils import read_yaml, write_yaml
+import kiwi
+import kiwi.pyfunc.scoring_server as pyfunc_scoring_server
+import kiwi.pyfunc
+from kiwi.utils.file_utils import read_yaml, write_yaml
 
 LOCALHOST = '127.0.0.1'
 
@@ -44,7 +44,7 @@ def random_file(ext):
 
 
 def score_model_in_sagemaker_docker_container(
-        model_uri, data, content_type, flavor=mlflow.pyfunc.FLAVOR_NAME,
+        model_uri, data, content_type, flavor=kiwi.pyfunc.FLAVOR_NAME,
         activity_polling_timeout_seconds=500):
     """
     :param model_uri: URI to the model to be served.
@@ -127,7 +127,7 @@ def pyfunc_serve_and_score_model(
     """
     env = dict(os.environ)
     env.update(LC_ALL="en_US.UTF-8", LANG="en_US.UTF-8")
-    env.update(MLFLOW_TRACKING_URI=mlflow.get_tracking_uri())
+    env.update(MLFLOW_TRACKING_URI=kiwi.get_tracking_uri())
     env.update(MLFLOW_HOME=_get_mlflow_home())
     port = get_safe_port()
     scoring_cmd = ['mlflow', 'models', 'serve', '-m', model_uri, "-p", str(port),
@@ -143,7 +143,7 @@ def _get_mlflow_home():
     """
     :return: The path to the MLflow installation root directory
     """
-    mlflow_module_path = os.path.dirname(os.path.abspath(mlflow.__file__))
+    mlflow_module_path = os.path.dirname(os.path.abspath(kiwi.__file__))
     # The MLflow root directory is one level about the mlflow module location
     return os.path.join(mlflow_module_path, os.pardir)
 

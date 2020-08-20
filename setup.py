@@ -3,7 +3,7 @@ from importlib.machinery import SourceFileLoader
 from setuptools import setup, find_packages
 
 version = SourceFileLoader(
-    'mlflow.version', os.path.join('mlflow', 'version.py')).load_module().VERSION
+    'kiwi.version', os.path.join('kiwi', 'version.py')).load_module().VERSION
 
 
 # Get a list of all files in the JS directory to include in our module
@@ -15,18 +15,18 @@ def package_files(directory):
     return paths
 
 
-# Prints out a set of paths (relative to the mlflow/ directory) of files in mlflow/server/js/build
-# to include in the wheel, e.g. "../mlflow/server/js/build/index.html"
-js_files = package_files('mlflow/server/js/build')
-models_container_server_files = package_files("mlflow/models/container")
-alembic_files = ["../mlflow/store/db_migrations/alembic.ini",
-                 "../mlflow/temporary_db_migrations_for_pre_1_users/alembic.ini"]
+# Prints out a set of paths (relative to the kiwi/ directory) of files in kiwi/server/js/build
+# to include in the wheel, e.g. "../kiwi/server/js/build/index.html"
+js_files = package_files('kiwi/server/js/build')
+models_container_server_files = package_files("kiwi/models/container")
+alembic_files = ["../kiwi/store/db_migrations/alembic.ini",
+                 "../kiwi/temporary_db_migrations_for_pre_1_users/alembic.ini"]
 
 setup(
-    name='mlflow',
+    name='kiwi',
     version=version,
     packages=find_packages(exclude=['tests', 'tests.*']),
-    package_data={"mlflow": js_files + models_container_server_files + alembic_files},
+    package_data={"kiwi": js_files + models_container_server_files + alembic_files},
     install_requires=[
         'alembic',
         'azure-storage-blob>=12.0',
@@ -51,6 +51,8 @@ setup(
         'sqlalchemy<=1.3.13',
         'gorilla',
         'prometheus-flask-exporter',
+        'psutil',
+        'py-cpuinfo'
     ],
     extras_require={
         'extras': [
@@ -64,7 +66,7 @@ setup(
             'azureml-core>=1.2.0'
         ],
          'sqlserver': [
-            "mlflow-dbstore",
+            "kiwi-dbstore",
         ],
          'aliyun-oss': [
             "aliyunstoreplugin",
@@ -72,23 +74,17 @@ setup(
     },
     entry_points='''
         [console_scripts]
-        mlflow=mlflow.cli:cli
+        kiwi=kiwi.cli:cli
     ''',
     zip_safe=False,
     author='Databricks',
-    description='MLflow: An ML Workflow Tool',
-    long_description=open('README.rst').read(),
+    description='kiwi: An ML Workflow Tool',
+    long_description=open('README.md').read(),
     license='Apache License 2.0',
     classifiers=[
         'Intended Audience :: Developers',
         'Programming Language :: Python :: 3.6',
     ],
     keywords='ml ai databricks',
-    url='https://mlflow.org/',
     python_requires='>=3.5',
-    project_urls={
-        'Bug Tracker': 'https://github.com/mlflow/mlflow/issues',
-        'Documentation': 'https://mlflow.org/docs/latest/index.html',
-        'Source Code': 'https://github.com/mlflow/mlflow'
-    },
 )

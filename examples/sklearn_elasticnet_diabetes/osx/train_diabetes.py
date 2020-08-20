@@ -43,8 +43,8 @@ data = pd.DataFrame(d, columns=cols)
 
 
 # Import mlflow
-import mlflow
-import mlflow.sklearn
+import kiwi
+import kiwi.sklearn
 
 
 # Evaluate metrics
@@ -85,12 +85,12 @@ if __name__ == "__main__":
     print("  R2: %s" % r2)
 
     # Log mlflow attributes for mlflow UI
-    mlflow.log_param("alpha", alpha)
-    mlflow.log_param("l1_ratio", l1_ratio)
-    mlflow.log_metric("rmse", rmse)
-    mlflow.log_metric("r2", r2)
-    mlflow.log_metric("mae", mae)
-    mlflow.sklearn.log_model(lr, "model")
+    kiwi.log_param("alpha", alpha)
+    kiwi.log_param("l1_ratio", l1_ratio)
+    kiwi.log_metric("rmse", rmse)
+    kiwi.log_metric("r2", r2)
+    kiwi.log_metric("mae", mae)
+    kiwi.sklearn.log_model(lr, "model")
 
 
     # Compute paths
@@ -122,4 +122,4 @@ if __name__ == "__main__":
     plt.close(fig)
 
     # Log artifacts (output files)
-    mlflow.log_artifact("ElasticNet-paths.png")
+    kiwi.log_artifact("ElasticNet-paths.png")

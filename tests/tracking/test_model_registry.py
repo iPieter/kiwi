@@ -11,10 +11,10 @@ import pytest
 import shutil
 import tempfile
 
-from mlflow.entities.model_registry import RegisteredModel
-from mlflow.exceptions import MlflowException
-from mlflow.tracking import MlflowClient
-from mlflow.utils.file_utils import path_to_local_file_uri
+from kiwi.entities.model_registry import RegisteredModel
+from kiwi.exceptions import MlflowException
+from kiwi.tracking import MlflowClient
+from kiwi.utils.file_utils import path_to_local_file_uri
 from tests.tracking.integration_test_utils import _await_server_down_or_die, _init_server
 
 # pylint: disable=unused-argument

@@ -10,7 +10,7 @@
 #
 import argparse
 import os
-import mlflow
+import kiwi
 import tempfile
 import torch
 import torch.nn as nn
@@ -143,12 +143,12 @@ def test(epoch):
 def log_scalar(name, value, step):
     """Log a scalar value to both MLflow and TensorBoard"""
     writer.add_scalar(name, value, step)
-    mlflow.log_metric(name, value)
+    kiwi.log_metric(name, value)
 
-with mlflow.start_run():
+with kiwi.start_run():
     # Log our parameters into mlflow
     for key, value in vars(args).items():
-        mlflow.log_param(key, value)
+        kiwi.log_param(key, value)
 
     # Create a SummaryWriter to write TensorBoard events locally
     output_dir = dirpath = tempfile.mkdtemp()
@@ -162,6 +162,6 @@ with mlflow.start_run():
 
     # Upload the TensorBoard event logs as a run artifact
     print("Uploading TensorBoard events as a run artifact...")
-    mlflow.log_artifacts(output_dir, artifact_path="events")
+    kiwi.log_artifacts(output_dir, artifact_path="events")
     print("\nLaunch TensorBoard with:\n\ntensorboard --logdir=%s" %
-        os.path.join(mlflow.get_artifact_uri(), "events"))
+          os.path.join(kiwi.get_artifact_uri(), "events"))

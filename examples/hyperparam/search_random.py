@@ -15,11 +15,11 @@ import click
 
 import numpy as np
 
-import mlflow
-import mlflow.sklearn
-import mlflow.tracking
-import mlflow.projects
-from mlflow.tracking.client import MlflowClient
+import kiwi
+import kiwi.sklearn
+import kiwi.tracking
+import kiwi.projects
+from kiwi.tracking.client import MlflowClient
 
 _inf = np.finfo(np.float64).max
 
@@ -41,7 +41,7 @@ def run(training_data, max_runs, max_p, epochs, metric, seed):
     val_metric = "val_{}".format(metric)
     test_metric = "test_{}".format(metric)
     np.random.seed(seed)
-    tracking_client = mlflow.tracking.MlflowClient()
+    tracking_client = kiwi.tracking.MlflowClient()
 
     def new_eval(nepochs,
                  experiment_id,
@@ -50,8 +50,8 @@ def run(training_data, max_runs, max_p, epochs, metric, seed):
                  null_test_loss=_inf):
         def eval(parms):
             lr, momentum = parms
-            with mlflow.start_run(nested=True) as child_run:
-                p = mlflow.projects.run(
+            with kiwi.start_run(nested=True) as child_run:
+                p = kiwi.projects.run(
                     run_id=child_run.info.run_id,
                     uri=".",
                     entry_point="train",
@@ -77,7 +77,7 @@ def run(training_data, max_runs, max_p, epochs, metric, seed):
                 train_loss = null_train_loss
                 val_loss = null_val_loss
                 test_loss = null_test_loss
-            mlflow.log_metrics({
+            kiwi.log_metrics({
                 "train_{}".format(metric): train_loss,
                 "val_{}".format(metric): val_loss,
                 "test_{}".format(metric): test_loss
@@ -86,7 +86,7 @@ def run(training_data, max_runs, max_p, epochs, metric, seed):
 
         return eval
 
-    with mlflow.start_run() as run:
+    with kiwi.start_run() as run:
         experiment_id = run.info.experiment_id
         _, null_train_loss, null_val_loss, null_test_loss = new_eval(0, experiment_id)((0, 0))
         runs = [(np.random.uniform(1e-5, 1e-1), np.random.uniform(0, 1.0)) for _ in range(max_runs)]
@@ -114,8 +114,8 @@ def run(training_data, max_runs, max_p, epochs, metric, seed):
                 best_val_train = r.data.metrics["train_rmse"]
                 best_val_valid = r.data.metrics["val_rmse"]
                 best_val_test = r.data.metrics["test_rmse"]
-        mlflow.set_tag("best_run", best_run.info.run_id)
-        mlflow.log_metrics({
+        kiwi.set_tag("best_run", best_run.info.run_id)
+        kiwi.log_metrics({
             "train_{}".format(metric): best_val_train,
             "val_{}".format(metric): best_val_valid,
             "test_{}".format(metric): best_val_test

@@ -2,8 +2,8 @@ import os
 
 import pytest
 
-import mlflow
-from mlflow.utils.file_utils import path_to_local_sqlite_uri
+import kiwi
+from kiwi.utils.file_utils import path_to_local_sqlite_uri
 
 
 @pytest.fixture
@@ -27,10 +27,10 @@ def tracking_uri_mock(tmpdir, request):
         if 'notrackingurimock' not in request.keywords:
             tracking_uri = path_to_local_sqlite_uri(
                 os.path.join(tmpdir.strpath, 'mlruns'))
-            mlflow.set_tracking_uri(tracking_uri)
+            kiwi.set_tracking_uri(tracking_uri)
             os.environ["MLFLOW_TRACKING_URI"] = tracking_uri
         yield tmpdir
     finally:
-        mlflow.set_tracking_uri(None)
+        kiwi.set_tracking_uri(None)
         if 'notrackingurimock' not in request.keywords:
             del os.environ["MLFLOW_TRACKING_URI"]

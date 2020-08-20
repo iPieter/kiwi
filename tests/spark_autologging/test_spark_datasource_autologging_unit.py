@@ -2,10 +2,10 @@ import mock
 
 import pytest
 
-import mlflow
-from mlflow.exceptions import MlflowException
-import mlflow.spark
-from mlflow._spark_autologging import _get_current_listener, PythonSubscriber
+import kiwi
+from kiwi.exceptions import MlflowException
+import kiwi.spark
+from kiwi._spark_autologging import _get_current_listener, PythonSubscriber
 from tests.spark_autologging.utils import _get_or_create_spark_session
 
 
@@ -26,9 +26,9 @@ def mock_get_current_listener():
 @pytest.mark.large
 @pytest.mark.usefixtures("spark_session")
 def test_autolog_call_idempotent():
-    mlflow.spark.autolog()
+    kiwi.spark.autolog()
     listener = _get_current_listener()
-    mlflow.spark.autolog()
+    kiwi.spark.autolog()
     assert _get_current_listener() == listener
 
 
@@ -50,7 +50,7 @@ def test_enabling_autologging_throws_for_wrong_spark_version(
     with mock.patch("mlflow._spark_autologging._get_spark_major_version") as get_version_mock:
         get_version_mock.return_value = 2
         with pytest.raises(MlflowException) as exc:
-            mlflow.spark.autolog()
+            kiwi.spark.autolog()
         assert "Spark autologging unsupported for Spark versions < 3" in exc.value.message
 
 
@@ -60,5 +60,5 @@ def test_enabling_autologging_throws_when_spark_hasnt_been_started(
     # pylint: disable=unused-argument
     spark_session.stop()
     with pytest.raises(MlflowException) as exc:
-        mlflow.spark.autolog()
+        kiwi.spark.autolog()
     assert "No active SparkContext found" in exc.value.message

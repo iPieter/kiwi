@@ -5,19 +5,19 @@ import mock
 import pytest
 import six
 
-import mlflow
-from mlflow.entities import Param, Metric, RunTag, SourceType, ViewType, ExperimentTag, Experiment,\
+import kiwi
+from kiwi.entities import Param, Metric, RunTag, SourceType, ViewType, ExperimentTag, Experiment,\
     LifecycleStage
-from mlflow.exceptions import MlflowException
-from mlflow.models import Model
-from mlflow.protos.service_pb2 import CreateRun, DeleteExperiment, DeleteRun, LogBatch, \
+from kiwi.exceptions import MlflowException
+from kiwi.models import Model
+from kiwi.protos.service_pb2 import CreateRun, DeleteExperiment, DeleteRun, LogBatch, \
     LogMetric, LogParam, RestoreExperiment, RestoreRun, RunTag as ProtoRunTag, SearchRuns, \
     SetTag, DeleteTag, SetExperimentTag, GetExperimentByName, ListExperiments, LogModel
-from mlflow.protos.databricks_pb2 import RESOURCE_DOES_NOT_EXIST, ENDPOINT_NOT_FOUND,\
+from kiwi.protos.databricks_pb2 import RESOURCE_DOES_NOT_EXIST, ENDPOINT_NOT_FOUND,\
     REQUEST_LIMIT_EXCEEDED, INTERNAL_ERROR, ErrorCode
-from mlflow.store.tracking.rest_store import RestStore, DatabricksRestStore
-from mlflow.utils.proto_json_utils import message_to_json
-from mlflow.utils.rest_utils import MlflowHostCreds, _DEFAULT_HEADERS
+from kiwi.store.tracking.rest_store import RestStore, DatabricksRestStore
+from kiwi.utils.proto_json_utils import message_to_json
+from kiwi.utils.rest_utils import MlflowHostCreds, _DEFAULT_HEADERS
 
 
 class MyCoolException(Exception):
@@ -137,7 +137,7 @@ class TestRestStore(object):
                            return_value=user_name), \
                 mock.patch('time.time', return_value=13579), \
                 source_name_patch, source_type_patch:
-            with mlflow.start_run(experiment_id="43"):
+            with kiwi.start_run(experiment_id="43"):
                 cr_body = message_to_json(CreateRun(experiment_id="43",
                                                     user_id=user_name, start_time=13579000,
                                                     tags=[ProtoRunTag(key='mlflow.source.name',

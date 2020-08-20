@@ -2,9 +2,9 @@ import posixpath
 import mock
 import pytest
 
-from mlflow.entities import FileInfo
-from mlflow.store.artifact.artifact_repo import ArtifactRepository
-from mlflow.utils.file_utils import TempDir
+from kiwi.entities import FileInfo
+from kiwi.store.artifact.artifact_repo import ArtifactRepository
+from kiwi.utils.file_utils import TempDir
 
 
 class ArtifactRepositoryImpl(ArtifactRepository):

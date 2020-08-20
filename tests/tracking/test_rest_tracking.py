@@ -13,17 +13,17 @@ import shutil
 import time
 import tempfile
 
-import mlflow.experiments
-from mlflow.exceptions import MlflowException
-from mlflow.entities import Metric, Param, RunTag, ViewType
-from mlflow.models import Model
+import kiwi.experiments
+from kiwi.exceptions import MlflowException
+from kiwi.entities import Metric, Param, RunTag, ViewType
+from kiwi.models import Model
 
-import mlflow.pyfunc
-from mlflow.tracking import MlflowClient
-from mlflow.utils.file_utils import TempDir
-from mlflow.utils.mlflow_tags import MLFLOW_USER, MLFLOW_RUN_NAME, MLFLOW_PARENT_RUN_ID, \
+import kiwi.pyfunc
+from kiwi.tracking import MlflowClient
+from kiwi.utils.file_utils import TempDir
+from kiwi.utils.mlflow_tags import MLFLOW_USER, MLFLOW_RUN_NAME, MLFLOW_PARENT_RUN_ID, \
     MLFLOW_SOURCE_TYPE, MLFLOW_SOURCE_NAME, MLFLOW_PROJECT_ENTRY_POINT, MLFLOW_GIT_COMMIT
-from mlflow.utils.file_utils import path_to_local_file_uri
+from kiwi.utils.file_utils import path_to_local_file_uri
 
 from tests.integration.utils import invoke_cli_runner
 from tests.tracking.integration_test_utils import _await_server_down_or_die, _init_server
@@ -94,9 +94,9 @@ def tracking_server_uri(backend_store_uri):
 @pytest.fixture()
 def mlflow_client(tracking_server_uri):
     """Provides an MLflow Tracking API client pointed at the local tracking server."""
-    mlflow.set_tracking_uri(tracking_server_uri)
+    kiwi.set_tracking_uri(tracking_server_uri)
     yield mock.Mock(wraps=MlflowClient(tracking_server_uri))
-    mlflow.set_tracking_uri(None)
+    kiwi.set_tracking_uri(None)
 
 
 @pytest.fixture()
@@ -140,14 +140,14 @@ def test_delete_restore_experiment(mlflow_client):
 
 def test_delete_restore_experiment_cli(mlflow_client, cli_env):
     experiment_name = "DeleteriousCLI"
-    invoke_cli_runner(mlflow.experiments.commands,
+    invoke_cli_runner(kiwi.experiments.commands,
                       ['create', '--experiment-name', experiment_name], env=cli_env)
     experiment_id = mlflow_client.get_experiment_by_name(experiment_name).experiment_id
     assert mlflow_client.get_experiment(experiment_id).lifecycle_stage == 'active'
-    invoke_cli_runner(mlflow.experiments.commands, ['delete', '-x', str(experiment_id)],
+    invoke_cli_runner(kiwi.experiments.commands, ['delete', '-x', str(experiment_id)],
                       env=cli_env)
     assert mlflow_client.get_experiment(experiment_id).lifecycle_stage == 'deleted'
-    invoke_cli_runner(mlflow.experiments.commands, ['restore', '-x', str(experiment_id)],
+    invoke_cli_runner(kiwi.experiments.commands, ['restore', '-x', str(experiment_id)],
                       env=cli_env)
     assert mlflow_client.get_experiment(experiment_id).lifecycle_stage == 'active'
 
@@ -163,12 +163,12 @@ def test_rename_experiment_cli(mlflow_client, cli_env):
     bad_experiment_name = "CLIBadName"
     good_experiment_name = "CLIGoodName"
 
-    invoke_cli_runner(mlflow.experiments.commands, ['create', '-n', bad_experiment_name],
+    invoke_cli_runner(kiwi.experiments.commands, ['create', '-n', bad_experiment_name],
                       env=cli_env)
     experiment_id = mlflow_client.get_experiment_by_name(bad_experiment_name).experiment_id
     assert mlflow_client.get_experiment(experiment_id).name == bad_experiment_name
     invoke_cli_runner(
-        mlflow.experiments.commands,
+        kiwi.experiments.commands,
         ['rename', '--experiment-id', str(experiment_id), '--new-name', good_experiment_name],
         env=cli_env)
     assert mlflow_client.get_experiment(experiment_id).name == good_experiment_name
@@ -332,17 +332,17 @@ def test_log_batch(mlflow_client, backend_store_uri):
 def test_log_model(mlflow_client, backend_store_uri):
     experiment_id = mlflow_client.create_experiment('Log models')
     with TempDir(chdr=True):
-        mlflow.set_experiment("Log models")
+        kiwi.set_experiment("Log models")
         model_paths = ["model/path/{}".format(i) for i in range(3)]
-        with mlflow.start_run(experiment_id=experiment_id) as run:
+        with kiwi.start_run(experiment_id=experiment_id) as run:
             for i, m in enumerate(model_paths):
-                mlflow.pyfunc.log_model(m, loader_module="mlflow.pyfunc")
-                mlflow.pyfunc.save_model(m,
-                                         mlflow_model=Model(artifact_path=m,
+                kiwi.pyfunc.log_model(m, loader_module="mlflow.pyfunc")
+                kiwi.pyfunc.save_model(m,
+                                       mlflow_model=Model(artifact_path=m,
                                                             run_id=run.info.run_id),
-                                         loader_module="mlflow.pyfunc")
+                                       loader_module="mlflow.pyfunc")
                 model = Model.load(os.path.join(m, "MLmodel"))
-                run = mlflow.get_run(run.info.run_id)
+                run = kiwi.get_run(run.info.run_id)
                 tag = run.data.tags["mlflow.log-model.history"]
                 models = json.loads(tag)
                 model.utc_time_created = models[i]["utc_time_created"]

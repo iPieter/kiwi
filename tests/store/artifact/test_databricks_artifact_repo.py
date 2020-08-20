@@ -8,13 +8,13 @@ import posixpath
 from requests.models import Response
 from unittest.mock import ANY
 
-from mlflow.entities.file_info import FileInfo as FileInfoEntity
-from mlflow.exceptions import MlflowException
-from mlflow.protos.databricks_artifacts_pb2 import GetCredentialsForWrite, GetCredentialsForRead, \
+from kiwi.entities.file_info import FileInfo as FileInfoEntity
+from kiwi.exceptions import MlflowException
+from kiwi.protos.databricks_artifacts_pb2 import GetCredentialsForWrite, GetCredentialsForRead, \
     ArtifactCredentialType, ArtifactCredentialInfo
-from mlflow.protos.service_pb2 import ListArtifacts, FileInfo
-from mlflow.store.artifact.artifact_repository_registry import get_artifact_repository
-from mlflow.store.artifact.dbfs_artifact_repo import DatabricksArtifactRepository
+from kiwi.protos.service_pb2 import ListArtifacts, FileInfo
+from kiwi.store.artifact.artifact_repository_registry import get_artifact_repository
+from kiwi.store.artifact.dbfs_artifact_repo import DatabricksArtifactRepository
 
 DATABRICKS_ARTIFACT_REPOSITORY_PACKAGE = 'mlflow.store.artifact.databricks_artifact_repo'
 DATABRICKS_ARTIFACT_REPOSITORY = DATABRICKS_ARTIFACT_REPOSITORY_PACKAGE + \

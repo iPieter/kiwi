@@ -5,8 +5,8 @@ np.random.seed(1337)
 import keras  # noqa
 import keras.layers as layers  # noqa
 
-import mlflow  # noqa
-import mlflow.keras  # noqa
+import kiwi  # noqa
+import kiwi.keras  # noqa
 
 
 @pytest.fixture
@@ -26,9 +26,9 @@ def random_one_hot_labels():
 @pytest.fixture(params=[True, False])
 def manual_run(request):
     if request.param:
-        mlflow.start_run()
+        kiwi.start_run()
     yield
-    mlflow.end_run()
+    kiwi.end_run()
 
 
 def create_model():
@@ -47,7 +47,7 @@ def create_model():
 @pytest.mark.large
 @pytest.mark.parametrize('fit_variant', ['fit', 'fit_generator'])
 def test_keras_autolog_ends_auto_created_run(random_train_data, random_one_hot_labels, fit_variant):
-    mlflow.keras.autolog()
+    kiwi.keras.autolog()
 
     data = random_train_data
     labels = random_one_hot_labels
@@ -62,16 +62,16 @@ def test_keras_autolog_ends_auto_created_run(random_train_data, random_one_hot_l
     else:
         model.fit(data, labels, epochs=10)
 
-    assert mlflow.active_run() is None
+    assert kiwi.active_run() is None
 
 
 @pytest.mark.large
 @pytest.mark.parametrize('fit_variant', ['fit', 'fit_generator'])
 def test_keras_autolog_persists_manually_created_run(random_train_data,
                                                      random_one_hot_labels, fit_variant):
-    mlflow.keras.autolog()
+    kiwi.keras.autolog()
 
-    with mlflow.start_run() as run:
+    with kiwi.start_run() as run:
         data = random_train_data
         labels = random_one_hot_labels
 
@@ -85,14 +85,14 @@ def test_keras_autolog_persists_manually_created_run(random_train_data,
         else:
             model.fit(data, labels, epochs=10)
 
-        assert mlflow.active_run()
-        assert mlflow.active_run().info.run_id == run.info.run_id
+        assert kiwi.active_run()
+        assert kiwi.active_run().info.run_id == run.info.run_id
 
 
 @pytest.fixture
 def keras_random_data_run(random_train_data, fit_variant, random_one_hot_labels, manual_run):
 
-    mlflow.keras.autolog()
+    kiwi.keras.autolog()
 
     data = random_train_data
     labels = random_one_hot_labels
@@ -107,7 +107,7 @@ def keras_random_data_run(random_train_data, fit_variant, random_one_hot_labels,
     else:
         model.fit(data, labels, epochs=10, steps_per_epoch=1)
 
-    client = mlflow.tracking.MlflowClient()
+    client = kiwi.tracking.MlflowClient()
     return client.get_run(client.list_run_infos(experiment_id='0')[0].run_id)
 
 
@@ -130,7 +130,7 @@ def test_keras_autolog_logs_expected_data(keras_random_data_run):
     assert data.params['optimizer_name'] == 'Adam'
     assert 'epsilon' in data.params
     assert data.params['epsilon'] == '1e-07'
-    client = mlflow.tracking.MlflowClient()
+    client = kiwi.tracking.MlflowClient()
     artifacts = client.list_artifacts(keras_random_data_run.info.run_id)
     artifacts = map(lambda x: x.path, artifacts)
     assert 'model_summary.txt' in artifacts
@@ -149,11 +149,11 @@ def test_keras_autolog_logs_default_params(keras_random_data_run):
 @pytest.mark.parametrize('fit_variant', ['fit', 'fit_generator'])
 def test_keras_autolog_model_can_load_from_artifact(keras_random_data_run, random_train_data):
     run_id = keras_random_data_run.info.run_id
-    client = mlflow.tracking.MlflowClient()
+    client = kiwi.tracking.MlflowClient()
     artifacts = client.list_artifacts(run_id)
     artifacts = map(lambda x: x.path, artifacts)
     assert 'model' in artifacts
-    model = mlflow.keras.load_model("runs:/" + run_id + "/model")
+    model = kiwi.keras.load_model("runs:/" + run_id + "/model")
     model.predict(random_train_data)
 
 
@@ -161,7 +161,7 @@ def test_keras_autolog_model_can_load_from_artifact(keras_random_data_run, rando
 def keras_random_data_run_with_callback(random_train_data, fit_variant,
                                         random_one_hot_labels, manual_run,
                                         callback, restore_weights, patience):
-    mlflow.keras.autolog()
+    kiwi.keras.autolog()
 
     data = random_train_data
     labels = random_one_hot_labels
@@ -188,7 +188,7 @@ def keras_random_data_run_with_callback(random_train_data, fit_variant,
     else:
         history = model.fit(data, labels, epochs=10, callbacks=[callback])
 
-    client = mlflow.tracking.MlflowClient()
+    client = kiwi.tracking.MlflowClient()
     return client.get_run(client.list_run_infos(experiment_id='0')[0].run_id), history, callback
 
 
@@ -213,7 +213,7 @@ def test_keras_autolog_early_stop_logs(keras_random_data_run_with_callback):
     assert int(metrics['stopped_epoch']) - max(1, callback.patience) == restored_epoch
     assert 'loss' in history.history
     num_of_epochs = len(history.history['loss'])
-    client = mlflow.tracking.MlflowClient()
+    client = kiwi.tracking.MlflowClient()
     metric_history = client.get_metric_history(run.info.run_id, 'loss')
     # Check the test epoch numbers are correct
     assert num_of_epochs == max(1, callback.patience) + 1
@@ -243,7 +243,7 @@ def test_keras_autolog_early_stop_no_stop_does_not_log(keras_random_data_run_wit
     assert 'restored_epoch' not in metrics
     assert 'loss' in history.history
     num_of_epochs = len(history.history['loss'])
-    client = mlflow.tracking.MlflowClient()
+    client = kiwi.tracking.MlflowClient()
     metric_history = client.get_metric_history(run.info.run_id, 'loss')
     # Check the test epoch numbers are correct
     assert num_of_epochs == 10
@@ -269,7 +269,7 @@ def test_keras_autolog_early_stop_no_restore_does_not_log(keras_random_data_run_
     assert 'restored_epoch' not in metrics
     assert 'loss' in history.history
     num_of_epochs = len(history.history['loss'])
-    client = mlflow.tracking.MlflowClient()
+    client = kiwi.tracking.MlflowClient()
     metric_history = client.get_metric_history(run.info.run_id, 'loss')
     # Check the test epoch numbers are correct
     assert num_of_epochs == callback.patience + 1
@@ -293,7 +293,7 @@ def test_keras_autolog_non_early_stop_callback_does_not_log(keras_random_data_ru
     assert 'restored_epoch' not in metrics
     assert 'loss' in history.history
     num_of_epochs = len(history.history['loss'])
-    client = mlflow.tracking.MlflowClient()
+    client = kiwi.tracking.MlflowClient()
     metric_history = client.get_metric_history(run.info.run_id, 'loss')
     # Check the test epoch numbers are correct
     assert num_of_epochs == 10

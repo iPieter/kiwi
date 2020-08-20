@@ -1,5 +1,5 @@
-from mlflow.protos import service_pb2
-from mlflow.entities import ViewType
+from kiwi.protos import service_pb2
+from kiwi.entities import ViewType
 
 
 def test_to_proto():

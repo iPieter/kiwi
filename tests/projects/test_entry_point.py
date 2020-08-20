@@ -4,9 +4,9 @@ import mock
 import pytest
 from six.moves import shlex_quote
 
-from mlflow.exceptions import ExecutionException
-from mlflow.projects._project_spec import EntryPoint
-from mlflow.utils.file_utils import TempDir, path_to_local_file_uri
+from kiwi.exceptions import ExecutionException
+from kiwi.projects._project_spec import EntryPoint
+from kiwi.utils.file_utils import TempDir, path_to_local_file_uri
 from tests.projects.utils import load_project, TEST_PROJECT_DIR
 
 

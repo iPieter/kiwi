@@ -6,13 +6,13 @@ import pytest
 import mock
 from mock import Mock
 
-from mlflow.exceptions import MlflowException
-from mlflow.store.artifact.artifact_repository_registry import get_artifact_repository
-from mlflow.store.artifact.dbfs_artifact_repo import _get_host_creds_from_default_store
-from mlflow.store.artifact.dbfs_artifact_repo import DbfsRestArtifactRepository
-from mlflow.store.tracking.file_store import FileStore
-from mlflow.store.tracking.rest_store import RestStore
-from mlflow.utils.rest_utils import MlflowHostCreds
+from kiwi.exceptions import MlflowException
+from kiwi.store.artifact.artifact_repository_registry import get_artifact_repository
+from kiwi.store.artifact.dbfs_artifact_repo import _get_host_creds_from_default_store
+from kiwi.store.artifact.dbfs_artifact_repo import DbfsRestArtifactRepository
+from kiwi.store.tracking.file_store import FileStore
+from kiwi.store.tracking.rest_store import RestStore
+from kiwi.utils.rest_utils import MlflowHostCreds
 
 
 @pytest.fixture()

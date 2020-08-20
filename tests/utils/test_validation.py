@@ -1,10 +1,10 @@
 import copy
 import pytest
 
-from mlflow.exceptions import MlflowException
-from mlflow.entities import Metric, Param, RunTag
-from mlflow.protos.databricks_pb2 import ErrorCode, INVALID_PARAMETER_VALUE
-from mlflow.utils.validation import (
+from kiwi.exceptions import MlflowException
+from kiwi.entities import Metric, Param, RunTag
+from kiwi.protos.databricks_pb2 import ErrorCode, INVALID_PARAMETER_VALUE
+from kiwi.utils.validation import (
     _validate_metric_name, _validate_param_name, _validate_tag_name, _validate_run_id,
     _validate_batch_log_data, _validate_batch_log_limits, _validate_experiment_artifact_location,
     _validate_db_type_string, _validate_experiment_name

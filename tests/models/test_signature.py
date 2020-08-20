@@ -1,9 +1,9 @@
 import json
 import numpy as np
 
-from mlflow.models.signature import ModelSignature, infer_signature
-from mlflow.types import DataType
-from mlflow.types.schema import Schema, ColSpec
+from kiwi.models.signature import ModelSignature, infer_signature
+from kiwi.types import DataType
+from kiwi.types.schema import Schema, ColSpec
 
 
 def test_model_signature():

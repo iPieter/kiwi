@@ -1,10 +1,10 @@
 from click.testing import CliRunner
-from mlflow.runs import list_run
-import mlflow
+from kiwi.runs import list_run
+import kiwi
 
 
 def test_list_run():
-    with mlflow.start_run(run_name='apple'):
+    with kiwi.start_run(run_name='apple'):
         pass
     result = CliRunner().invoke(list_run, ["--experiment-id", "0"])
     assert 'apple' in result.output

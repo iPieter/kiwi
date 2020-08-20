@@ -3,14 +3,14 @@ import os
 import pytest
 from six.moves import reload_module as reload
 
-import mlflow
-from mlflow.store.db.db_types import DATABASE_ENGINES
-from mlflow.store.tracking.file_store import FileStore
-from mlflow.store.tracking.rest_store import RestStore
-from mlflow.store.tracking.sqlalchemy_store import SqlAlchemyStore
-from mlflow.tracking.registry import UnsupportedModelRegistryStoreURIException
-from mlflow.tracking._tracking_service.registry import TrackingStoreRegistry
-from mlflow.tracking._tracking_service.utils import _get_store, _resolve_tracking_uri, \
+import kiwi
+from kiwi.store.db.db_types import DATABASE_ENGINES
+from kiwi.store.tracking.file_store import FileStore
+from kiwi.store.tracking.rest_store import RestStore
+from kiwi.store.tracking.sqlalchemy_store import SqlAlchemyStore
+from kiwi.tracking.registry import UnsupportedModelRegistryStoreURIException
+from kiwi.tracking._tracking_service.registry import TrackingStoreRegistry
+from kiwi.tracking._tracking_service.utils import _get_store, _resolve_tracking_uri, \
     _TRACKING_INSECURE_TLS_ENV_VAR, _TRACKING_PASSWORD_ENV_VAR, _TRACKING_TOKEN_ENV_VAR, \
     _TRACKING_URI_ENV_VAR, _TRACKING_USERNAME_ENV_VAR
 
@@ -194,7 +194,7 @@ def test_standard_store_registry_with_mocked_entrypoint():
         # Entrypoints are registered at import time, so we need to reload the
         # module to register the entrypoint given by the mocked
         # extrypoints.get_group_all
-        reload(mlflow.tracking._tracking_service.utils)
+        reload(kiwi.tracking._tracking_service.utils)
 
         expected_standard_registry = {
             '',
@@ -209,7 +209,7 @@ def test_standard_store_registry_with_mocked_entrypoint():
             'mock-scheme'
         }
         assert expected_standard_registry.issubset(
-            mlflow.tracking._tracking_service.utils._tracking_store_registry._registry.keys()
+            kiwi.tracking._tracking_service.utils._tracking_store_registry._registry.keys()
         )
 
 
@@ -217,9 +217,9 @@ def test_standard_store_registry_with_mocked_entrypoint():
 def test_standard_store_registry_with_installed_plugin(tmp_wkdir):
     """This test requires the package in tests/resources/mlflow-test-plugin to be installed"""
 
-    reload(mlflow.tracking._tracking_service.utils)
+    reload(kiwi.tracking._tracking_service.utils)
     assert "file-plugin" in \
-           mlflow.tracking._tracking_service.utils._tracking_store_registry._registry.keys()
+           kiwi.tracking._tracking_service.utils._tracking_store_registry._registry.keys()
 
     from mlflow_test_plugin.file_store import PluginFileStore
 
@@ -227,7 +227,7 @@ def test_standard_store_registry_with_installed_plugin(tmp_wkdir):
         _TRACKING_URI_ENV_VAR: "file-plugin:test-path",
     }
     with mock.patch.dict(os.environ, env):
-        plugin_file_store = mlflow.tracking._tracking_service.utils._get_store()
+        plugin_file_store = kiwi.tracking._tracking_service.utils._get_store()
         assert isinstance(plugin_file_store, PluginFileStore)
         assert plugin_file_store.is_plugin
 

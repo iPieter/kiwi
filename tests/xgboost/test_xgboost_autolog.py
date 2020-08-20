@@ -7,14 +7,14 @@ from sklearn import datasets
 import xgboost as xgb
 import matplotlib as mpl
 
-import mlflow
-import mlflow.xgboost
+import kiwi
+import kiwi.xgboost
 
 mpl.use('Agg')
 
 
 def get_latest_run():
-    client = mlflow.tracking.MlflowClient()
+    client = kiwi.tracking.MlflowClient()
     return client.get_run(client.list_run_infos(experiment_id='0')[0].run_id)
 
 
@@ -36,23 +36,23 @@ def dtrain():
 
 @pytest.mark.large
 def test_xgb_autolog_ends_auto_created_run(bst_params, dtrain):
-    mlflow.xgboost.autolog()
+    kiwi.xgboost.autolog()
     xgb.train(bst_params, dtrain)
-    assert mlflow.active_run() is None
+    assert kiwi.active_run() is None
 
 
 @pytest.mark.large
 def test_xgb_autolog_persists_manually_created_run(bst_params, dtrain):
-    mlflow.xgboost.autolog()
-    with mlflow.start_run() as run:
+    kiwi.xgboost.autolog()
+    with kiwi.start_run() as run:
         xgb.train(bst_params, dtrain)
-        assert mlflow.active_run()
-        assert mlflow.active_run().info.run_id == run.info.run_id
+        assert kiwi.active_run()
+        assert kiwi.active_run().info.run_id == run.info.run_id
 
 
 @pytest.mark.large
 def test_xgb_autolog_logs_default_params(bst_params, dtrain):
-    mlflow.xgboost.autolog()
+    kiwi.xgboost.autolog()
     xgb.train(bst_params, dtrain)
     run = get_latest_run()
     params = run.data.params
@@ -78,7 +78,7 @@ def test_xgb_autolog_logs_default_params(bst_params, dtrain):
 
 @pytest.mark.large
 def test_xgb_autolog_logs_specified_params(bst_params, dtrain):
-    mlflow.xgboost.autolog()
+    kiwi.xgboost.autolog()
     expected_params = {
         'num_boost_round': 20,
         'early_stopping_rounds': 5,
@@ -103,14 +103,14 @@ def test_xgb_autolog_logs_specified_params(bst_params, dtrain):
 
 @pytest.mark.large
 def test_xgb_autolog_logs_metrics_with_validation_data(bst_params, dtrain):
-    mlflow.xgboost.autolog()
+    kiwi.xgboost.autolog()
     evals_result = {}
     xgb.train(bst_params, dtrain, num_boost_round=20,
               evals=[(dtrain, 'train')], evals_result=evals_result)
     run = get_latest_run()
     data = run.data
     metric_key = 'train-merror'
-    client = mlflow.tracking.MlflowClient()
+    client = kiwi.tracking.MlflowClient()
     metric_history = [x.value for x in client.get_metric_history(run.info.run_id, metric_key)]
     assert metric_key in data.metrics
     assert len(metric_history) == 20
@@ -119,13 +119,13 @@ def test_xgb_autolog_logs_metrics_with_validation_data(bst_params, dtrain):
 
 @pytest.mark.large
 def test_xgb_autolog_logs_metrics_with_multi_validation_data(bst_params, dtrain):
-    mlflow.xgboost.autolog()
+    kiwi.xgboost.autolog()
     evals_result = {}
     evals = [(dtrain, 'train'), (dtrain, 'valid')]
     xgb.train(bst_params, dtrain, num_boost_round=20, evals=evals, evals_result=evals_result)
     run = get_latest_run()
     data = run.data
-    client = mlflow.tracking.MlflowClient()
+    client = kiwi.tracking.MlflowClient()
     for eval_name in [e[1] for e in evals]:
         metric_key = '{}-merror'.format(eval_name)
         metric_history = [x.value for x in client.get_metric_history(run.info.run_id, metric_key)]
@@ -136,7 +136,7 @@ def test_xgb_autolog_logs_metrics_with_multi_validation_data(bst_params, dtrain)
 
 @pytest.mark.large
 def test_xgb_autolog_logs_metrics_with_multi_metrics(bst_params, dtrain):
-    mlflow.xgboost.autolog()
+    kiwi.xgboost.autolog()
     evals_result = {}
     params = {'eval_metric': ['merror', 'mlogloss']}
     params.update(bst_params)
@@ -144,7 +144,7 @@ def test_xgb_autolog_logs_metrics_with_multi_metrics(bst_params, dtrain):
               evals=[(dtrain, 'train')], evals_result=evals_result)
     run = get_latest_run()
     data = run.data
-    client = mlflow.tracking.MlflowClient()
+    client = kiwi.tracking.MlflowClient()
     for metric_name in params['eval_metric']:
         metric_key = 'train-{}'.format(metric_name)
         metric_history = [x.value for x in client.get_metric_history(run.info.run_id, metric_key)]
@@ -155,7 +155,7 @@ def test_xgb_autolog_logs_metrics_with_multi_metrics(bst_params, dtrain):
 
 @pytest.mark.large
 def test_xgb_autolog_logs_metrics_with_multi_validation_data_and_metrics(bst_params, dtrain):
-    mlflow.xgboost.autolog()
+    kiwi.xgboost.autolog()
     evals_result = {}
     params = {'eval_metric': ['merror', 'mlogloss']}
     params.update(bst_params)
@@ -163,7 +163,7 @@ def test_xgb_autolog_logs_metrics_with_multi_validation_data_and_metrics(bst_par
     xgb.train(params, dtrain, num_boost_round=20, evals=evals, evals_result=evals_result)
     run = get_latest_run()
     data = run.data
-    client = mlflow.tracking.MlflowClient()
+    client = kiwi.tracking.MlflowClient()
     for eval_name in [e[1] for e in evals]:
         for metric_name in params['eval_metric']:
             metric_key = '{}-{}'.format(eval_name, metric_name)
@@ -176,7 +176,7 @@ def test_xgb_autolog_logs_metrics_with_multi_validation_data_and_metrics(bst_par
 
 @pytest.mark.large
 def test_xgb_autolog_logs_metrics_with_early_stopping(bst_params, dtrain):
-    mlflow.xgboost.autolog()
+    kiwi.xgboost.autolog()
     evals_result = {}
     params = {'eval_metric': ['merror', 'mlogloss']}
     params.update(bst_params)
@@ -190,7 +190,7 @@ def test_xgb_autolog_logs_metrics_with_early_stopping(bst_params, dtrain):
     assert int(data.metrics['best_iteration']) == model.best_iteration
     assert 'stopped_iteration' in data.metrics
     assert int(data.metrics['stopped_iteration']) == len(evals_result['train']['merror']) - 1
-    client = mlflow.tracking.MlflowClient()
+    client = kiwi.tracking.MlflowClient()
 
     for eval_name in [e[1] for e in evals]:
         for metric_name in params['eval_metric']:
@@ -206,12 +206,12 @@ def test_xgb_autolog_logs_metrics_with_early_stopping(bst_params, dtrain):
 
 @pytest.mark.large
 def test_xgb_autolog_logs_feature_importance(bst_params, dtrain):
-    mlflow.xgboost.autolog()
+    kiwi.xgboost.autolog()
     model = xgb.train(bst_params, dtrain)
     run = get_latest_run()
     run_id = run.info.run_id
     artifacts_dir = run.info.artifact_uri.replace('file://', '')
-    client = mlflow.tracking.MlflowClient()
+    client = kiwi.tracking.MlflowClient()
     artifacts = [x.path for x in client.list_artifacts(run_id)]
 
     importance_type = 'weight'
@@ -231,12 +231,12 @@ def test_xgb_autolog_logs_feature_importance(bst_params, dtrain):
 @pytest.mark.large
 def test_xgb_autolog_logs_specified_feature_importance(bst_params, dtrain):
     importance_types = ['weight', 'total_gain']
-    mlflow.xgboost.autolog(importance_types)
+    kiwi.xgboost.autolog(importance_types)
     model = xgb.train(bst_params, dtrain)
     run = get_latest_run()
     run_id = run.info.run_id
     artifacts_dir = run.info.artifact_uri.replace('file://', '')
-    client = mlflow.tracking.MlflowClient()
+    client = kiwi.tracking.MlflowClient()
     artifacts = [x.path for x in client.list_artifacts(run_id)]
 
     for imp_type in importance_types:
@@ -255,17 +255,17 @@ def test_xgb_autolog_logs_specified_feature_importance(bst_params, dtrain):
 
 @pytest.mark.large
 def test_no_figure_is_opened_after_logging(bst_params, dtrain):
-    mlflow.xgboost.autolog()
+    kiwi.xgboost.autolog()
     xgb.train(bst_params, dtrain)
     assert mpl.pyplot.get_fignums() == []
 
 
 @pytest.mark.large
 def test_xgb_autolog_loads_model_from_artifact(bst_params, dtrain):
-    mlflow.xgboost.autolog()
+    kiwi.xgboost.autolog()
     model = xgb.train(bst_params, dtrain)
     run = get_latest_run()
     run_id = run.info.run_id
 
-    loaded_model = mlflow.xgboost.load_model('runs:/{}/model'.format(run_id))
+    loaded_model = kiwi.xgboost.load_model('runs:/{}/model'.format(run_id))
     np.testing.assert_array_almost_equal(model.predict(dtrain), loaded_model.predict(dtrain))

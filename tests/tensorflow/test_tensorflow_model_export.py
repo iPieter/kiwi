@@ -14,15 +14,15 @@ import pandas.testing
 import sklearn.datasets as datasets
 import tensorflow as tf
 
-import mlflow
-import mlflow.tensorflow
-import mlflow.pyfunc.scoring_server as pyfunc_scoring_server
-from mlflow.exceptions import MlflowException
-from mlflow import pyfunc
-from mlflow.store.artifact.s3_artifact_repo import S3ArtifactRepository
-from mlflow.tracking.artifact_utils import _download_artifact_from_uri
-from mlflow.utils.environment import _mlflow_conda_env
-from mlflow.utils.model_utils import _get_flavor_configuration
+import kiwi
+import kiwi.tensorflow
+import kiwi.pyfunc.scoring_server as pyfunc_scoring_server
+from kiwi.exceptions import MlflowException
+from kiwi import pyfunc
+from kiwi.store.artifact.s3_artifact_repo import S3ArtifactRepository
+from kiwi.tracking.artifact_utils import _download_artifact_from_uri
+from kiwi.utils.environment import _mlflow_conda_env
+from kiwi.utils.model_utils import _get_flavor_configuration
 
 from tests.helper_functions import score_model_in_sagemaker_docker_container
 from tests.helper_functions import set_boto_credentials  # pylint: disable=unused-import
@@ -165,7 +165,7 @@ def load_and_evaluate(model_path, tf_sess, tf_graph):
     expected_input_keys = ["sepallengthcm", "sepalwidthcm"]
     expected_output_keys = ["predictions"]
     input_length = 10
-    signature_def = mlflow.tensorflow.load_model(model_uri=model_path, tf_sess=tf_sess)
+    signature_def = kiwi.tensorflow.load_model(model_uri=model_path, tf_sess=tf_sess)
     if not tf_sess:
         tf_sess = tf.get_default_session()
         tf_graph = tf.get_default_graph()
@@ -194,15 +194,15 @@ def load_and_evaluate(model_path, tf_sess, tf_graph):
 @pytest.mark.large
 def test_save_and_load_model_persists_and_restores_model_in_default_graph_context_successfully(
         saved_tf_iris_model, model_path):
-    mlflow.tensorflow.save_model(tf_saved_model_dir=saved_tf_iris_model.path,
-                                 tf_meta_graph_tags=saved_tf_iris_model.meta_graph_tags,
-                                 tf_signature_def_key=saved_tf_iris_model.signature_def_key,
-                                 path=model_path)
+    kiwi.tensorflow.save_model(tf_saved_model_dir=saved_tf_iris_model.path,
+                               tf_meta_graph_tags=saved_tf_iris_model.meta_graph_tags,
+                               tf_signature_def_key=saved_tf_iris_model.signature_def_key,
+                               path=model_path)
 
     tf_graph = tf.Graph()
     tf_sess = tf.Session(graph=tf_graph)
     with tf_graph.as_default():
-        signature_def = mlflow.tensorflow.load_model(model_uri=model_path, tf_sess=tf_sess)
+        signature_def = kiwi.tensorflow.load_model(model_uri=model_path, tf_sess=tf_sess)
 
         for _, input_signature in signature_def.inputs.items():
             t_input = tf_graph.get_tensor_by_name(input_signature.name)
@@ -215,10 +215,10 @@ def test_save_and_load_model_persists_and_restores_model_in_default_graph_contex
 
 @pytest.mark.large
 def test_load_model_from_remote_uri_succeeds(saved_tf_iris_model, model_path, mock_s3_bucket):
-    mlflow.tensorflow.save_model(tf_saved_model_dir=saved_tf_iris_model.path,
-                                 tf_meta_graph_tags=saved_tf_iris_model.meta_graph_tags,
-                                 tf_signature_def_key=saved_tf_iris_model.signature_def_key,
-                                 path=model_path)
+    kiwi.tensorflow.save_model(tf_saved_model_dir=saved_tf_iris_model.path,
+                               tf_meta_graph_tags=saved_tf_iris_model.meta_graph_tags,
+                               tf_signature_def_key=saved_tf_iris_model.signature_def_key,
+                               path=model_path)
 
     artifact_root = "s3://{bucket_name}".format(bucket_name=mock_s3_bucket)
     artifact_path = "model"
@@ -229,7 +229,7 @@ def test_load_model_from_remote_uri_succeeds(saved_tf_iris_model, model_path, mo
     tf_graph = tf.Graph()
     tf_sess = tf.Session(graph=tf_graph)
     with tf_graph.as_default():
-        signature_def = mlflow.tensorflow.load_model(model_uri=model_uri, tf_sess=tf_sess)
+        signature_def = kiwi.tensorflow.load_model(model_uri=model_uri, tf_sess=tf_sess)
 
         for _, input_signature in signature_def.inputs.items():
             t_input = tf_graph.get_tensor_by_name(input_signature.name)
@@ -243,16 +243,16 @@ def test_load_model_from_remote_uri_succeeds(saved_tf_iris_model, model_path, mo
 @pytest.mark.large
 def test_save_and_load_model_persists_and_restores_model_in_custom_graph_context_successfully(
         saved_tf_iris_model, model_path):
-    mlflow.tensorflow.save_model(tf_saved_model_dir=saved_tf_iris_model.path,
-                                 tf_meta_graph_tags=saved_tf_iris_model.meta_graph_tags,
-                                 tf_signature_def_key=saved_tf_iris_model.signature_def_key,
-                                 path=model_path)
+    kiwi.tensorflow.save_model(tf_saved_model_dir=saved_tf_iris_model.path,
+                               tf_meta_graph_tags=saved_tf_iris_model.meta_graph_tags,
+                               tf_signature_def_key=saved_tf_iris_model.signature_def_key,
+                               path=model_path)
 
     tf_graph = tf.Graph()
     tf_sess = tf.Session(graph=tf_graph)
     custom_tf_context = tf_graph.device("/cpu:0")
     with custom_tf_context:
-        signature_def = mlflow.tensorflow.load_model(model_uri=model_path, tf_sess=tf_sess)
+        signature_def = kiwi.tensorflow.load_model(model_uri=model_path, tf_sess=tf_sess)
 
         for _, input_signature in signature_def.inputs.items():
             t_input = tf_graph.get_tensor_by_name(input_signature.name)
@@ -265,10 +265,10 @@ def test_save_and_load_model_persists_and_restores_model_in_custom_graph_context
 
 @pytest.mark.large
 def test_iris_model_can_be_loaded_and_evaluated_successfully(saved_tf_iris_model, model_path):
-    mlflow.tensorflow.save_model(tf_saved_model_dir=saved_tf_iris_model.path,
-                                 tf_meta_graph_tags=saved_tf_iris_model.meta_graph_tags,
-                                 tf_signature_def_key=saved_tf_iris_model.signature_def_key,
-                                 path=model_path)
+    kiwi.tensorflow.save_model(tf_saved_model_dir=saved_tf_iris_model.path,
+                               tf_meta_graph_tags=saved_tf_iris_model.meta_graph_tags,
+                               tf_signature_def_key=saved_tf_iris_model.signature_def_key,
+                               path=model_path)
 
     tf_graph_1 = tf.Graph()
     tf_sess_1 = tf.Session(graph=tf_graph_1)
@@ -284,10 +284,10 @@ def test_iris_model_can_be_loaded_and_evaluated_successfully(saved_tf_iris_model
 @pytest.mark.large
 def test_load_model_session_exists_but_not_passed_in_loads_and_evaluates(saved_tf_iris_model,
                                                                          model_path):
-    mlflow.tensorflow.save_model(tf_saved_model_dir=saved_tf_iris_model.path,
-                                 tf_meta_graph_tags=saved_tf_iris_model.meta_graph_tags,
-                                 tf_signature_def_key=saved_tf_iris_model.signature_def_key,
-                                 path=model_path)
+    kiwi.tensorflow.save_model(tf_saved_model_dir=saved_tf_iris_model.path,
+                               tf_meta_graph_tags=saved_tf_iris_model.meta_graph_tags,
+                               tf_signature_def_key=saved_tf_iris_model.signature_def_key,
+                               path=model_path)
 
     tf_graph = tf.Graph()
     tf_sess = tf.Session(graph=tf_graph)
@@ -297,83 +297,83 @@ def test_load_model_session_exists_but_not_passed_in_loads_and_evaluates(saved_t
 
 @pytest.mark.large
 def test_load_model_with_no_default_session_throws_exception(saved_tf_iris_model, model_path):
-    mlflow.tensorflow.save_model(tf_saved_model_dir=saved_tf_iris_model.path,
-                                 tf_meta_graph_tags=saved_tf_iris_model.meta_graph_tags,
-                                 tf_signature_def_key=saved_tf_iris_model.signature_def_key,
-                                 path=model_path)
+    kiwi.tensorflow.save_model(tf_saved_model_dir=saved_tf_iris_model.path,
+                               tf_meta_graph_tags=saved_tf_iris_model.meta_graph_tags,
+                               tf_signature_def_key=saved_tf_iris_model.signature_def_key,
+                               path=model_path)
     with pytest.raises(MlflowException):
-        mlflow.tensorflow.load_model(model_uri=model_path)
+        kiwi.tensorflow.load_model(model_uri=model_path)
 
 
 @pytest.mark.large
 def test_save_model_with_invalid_path_signature_def_or_metagraph_tags_throws_exception(
         saved_tf_iris_model, model_path):
     with pytest.raises(IOError):
-        mlflow.tensorflow.save_model(tf_saved_model_dir="not_a_valid_tf_model_dir",
-                                     tf_meta_graph_tags=saved_tf_iris_model.meta_graph_tags,
-                                     tf_signature_def_key=saved_tf_iris_model.signature_def_key,
-                                     path=model_path)
+        kiwi.tensorflow.save_model(tf_saved_model_dir="not_a_valid_tf_model_dir",
+                                   tf_meta_graph_tags=saved_tf_iris_model.meta_graph_tags,
+                                   tf_signature_def_key=saved_tf_iris_model.signature_def_key,
+                                   path=model_path)
 
     with pytest.raises(RuntimeError):
-        mlflow.tensorflow.save_model(tf_saved_model_dir=saved_tf_iris_model.path,
-                                     tf_meta_graph_tags=["bad tags"],
-                                     tf_signature_def_key=saved_tf_iris_model.signature_def_key,
-                                     path=model_path)
+        kiwi.tensorflow.save_model(tf_saved_model_dir=saved_tf_iris_model.path,
+                                   tf_meta_graph_tags=["bad tags"],
+                                   tf_signature_def_key=saved_tf_iris_model.signature_def_key,
+                                   path=model_path)
 
     with pytest.raises(MlflowException):
-        mlflow.tensorflow.save_model(tf_saved_model_dir=saved_tf_iris_model.path,
-                                     tf_meta_graph_tags=saved_tf_iris_model.meta_graph_tags,
-                                     tf_signature_def_key="bad signature",
-                                     path=model_path)
+        kiwi.tensorflow.save_model(tf_saved_model_dir=saved_tf_iris_model.path,
+                                   tf_meta_graph_tags=saved_tf_iris_model.meta_graph_tags,
+                                   tf_signature_def_key="bad signature",
+                                   path=model_path)
 
     with pytest.raises(IOError):
-        mlflow.tensorflow.save_model(tf_saved_model_dir="bad path",
-                                     tf_meta_graph_tags="bad tags",
-                                     tf_signature_def_key="bad signature",
-                                     path=model_path)
+        kiwi.tensorflow.save_model(tf_saved_model_dir="bad path",
+                                   tf_meta_graph_tags="bad tags",
+                                   tf_signature_def_key="bad signature",
+                                   path=model_path)
 
 
 @pytest.mark.large
 def test_load_model_loads_artifacts_from_specified_model_directory(saved_tf_iris_model, model_path):
-    mlflow.tensorflow.save_model(tf_saved_model_dir=saved_tf_iris_model.path,
-                                 tf_meta_graph_tags=saved_tf_iris_model.meta_graph_tags,
-                                 tf_signature_def_key=saved_tf_iris_model.signature_def_key,
-                                 path=model_path)
+    kiwi.tensorflow.save_model(tf_saved_model_dir=saved_tf_iris_model.path,
+                               tf_meta_graph_tags=saved_tf_iris_model.meta_graph_tags,
+                               tf_signature_def_key=saved_tf_iris_model.signature_def_key,
+                               path=model_path)
 
     # Verify that the MLflow model can be loaded even after deleting the TensorFlow `SavedModel`
     # directory that was used to create it, implying that the artifacts were copied to and are
     # loaded from the specified MLflow model path
     shutil.rmtree(saved_tf_iris_model.path)
     with tf.Session(graph=tf.Graph()) as tf_sess:
-        signature_def = mlflow.tensorflow.load_model(model_uri=model_path, tf_sess=tf_sess)
+        signature_def = kiwi.tensorflow.load_model(model_uri=model_path, tf_sess=tf_sess)
 
 
 def test_log_model_with_non_keyword_args_fails(saved_tf_iris_model):
     artifact_path = "model"
-    with mlflow.start_run():
+    with kiwi.start_run():
         with pytest.raises(TypeError):
-            mlflow.tensorflow.log_model(saved_tf_iris_model.path,
-                                        saved_tf_iris_model.meta_graph_tags,
-                                        saved_tf_iris_model.signature_def_key,
-                                        artifact_path)
+            kiwi.tensorflow.log_model(saved_tf_iris_model.path,
+                                      saved_tf_iris_model.meta_graph_tags,
+                                      saved_tf_iris_model.signature_def_key,
+                                      artifact_path)
 
 
 @pytest.mark.large
 def test_log_and_load_model_persists_and_restores_model_successfully(saved_tf_iris_model):
     artifact_path = "model"
-    with mlflow.start_run():
-        mlflow.tensorflow.log_model(tf_saved_model_dir=saved_tf_iris_model.path,
-                                    tf_meta_graph_tags=saved_tf_iris_model.meta_graph_tags,
-                                    tf_signature_def_key=saved_tf_iris_model.signature_def_key,
-                                    artifact_path=artifact_path)
+    with kiwi.start_run():
+        kiwi.tensorflow.log_model(tf_saved_model_dir=saved_tf_iris_model.path,
+                                  tf_meta_graph_tags=saved_tf_iris_model.meta_graph_tags,
+                                  tf_signature_def_key=saved_tf_iris_model.signature_def_key,
+                                  artifact_path=artifact_path)
         model_uri = "runs:/{run_id}/{artifact_path}".format(
-            run_id=mlflow.active_run().info.run_id,
+            run_id=kiwi.active_run().info.run_id,
             artifact_path=artifact_path)
 
     tf_graph = tf.Graph()
     tf_sess = tf.Session(graph=tf_graph)
     with tf_graph.as_default():
-        signature_def = mlflow.tensorflow.load_model(model_uri=model_uri, tf_sess=tf_sess)
+        signature_def = kiwi.tensorflow.load_model(model_uri=model_uri, tf_sess=tf_sess)
 
         for _, input_signature in signature_def.inputs.items():
             t_input = tf_graph.get_tensor_by_name(input_signature.name)
@@ -387,36 +387,36 @@ def test_log_and_load_model_persists_and_restores_model_successfully(saved_tf_ir
 def test_log_model_calls_register_model(saved_tf_iris_model):
     artifact_path = "model"
     register_model_patch = mock.patch("mlflow.register_model")
-    with mlflow.start_run(), register_model_patch:
-        mlflow.tensorflow.log_model(tf_saved_model_dir=saved_tf_iris_model.path,
-                                    tf_meta_graph_tags=saved_tf_iris_model.meta_graph_tags,
-                                    tf_signature_def_key=saved_tf_iris_model.signature_def_key,
-                                    artifact_path=artifact_path,
-                                    registered_model_name="AdsModel1")
-        model_uri = "runs:/{run_id}/{artifact_path}".format(run_id=mlflow.active_run().info.run_id,
+    with kiwi.start_run(), register_model_patch:
+        kiwi.tensorflow.log_model(tf_saved_model_dir=saved_tf_iris_model.path,
+                                  tf_meta_graph_tags=saved_tf_iris_model.meta_graph_tags,
+                                  tf_signature_def_key=saved_tf_iris_model.signature_def_key,
+                                  artifact_path=artifact_path,
+                                  registered_model_name="AdsModel1")
+        model_uri = "runs:/{run_id}/{artifact_path}".format(run_id=kiwi.active_run().info.run_id,
                                                             artifact_path=artifact_path)
-        mlflow.register_model.assert_called_once_with(model_uri, "AdsModel1")
+        kiwi.register_model.assert_called_once_with(model_uri, "AdsModel1")
 
 
 def test_log_model_no_registered_model_name(saved_tf_iris_model):
     artifact_path = "model"
     register_model_patch = mock.patch("mlflow.register_model")
-    with mlflow.start_run(), register_model_patch:
-        mlflow.tensorflow.log_model(tf_saved_model_dir=saved_tf_iris_model.path,
-                                    tf_meta_graph_tags=saved_tf_iris_model.meta_graph_tags,
-                                    tf_signature_def_key=saved_tf_iris_model.signature_def_key,
-                                    artifact_path=artifact_path)
-        mlflow.register_model.assert_not_called()
+    with kiwi.start_run(), register_model_patch:
+        kiwi.tensorflow.log_model(tf_saved_model_dir=saved_tf_iris_model.path,
+                                  tf_meta_graph_tags=saved_tf_iris_model.meta_graph_tags,
+                                  tf_signature_def_key=saved_tf_iris_model.signature_def_key,
+                                  artifact_path=artifact_path)
+        kiwi.register_model.assert_not_called()
 
 
 @pytest.mark.large
 def test_save_model_persists_specified_conda_env_in_mlflow_model_directory(
         saved_tf_iris_model, model_path, tf_custom_env):
-    mlflow.tensorflow.save_model(tf_saved_model_dir=saved_tf_iris_model.path,
-                                 tf_meta_graph_tags=saved_tf_iris_model.meta_graph_tags,
-                                 tf_signature_def_key=saved_tf_iris_model.signature_def_key,
-                                 path=model_path,
-                                 conda_env=tf_custom_env)
+    kiwi.tensorflow.save_model(tf_saved_model_dir=saved_tf_iris_model.path,
+                               tf_meta_graph_tags=saved_tf_iris_model.meta_graph_tags,
+                               tf_signature_def_key=saved_tf_iris_model.signature_def_key,
+                               path=model_path,
+                               conda_env=tf_custom_env)
     pyfunc_conf = _get_flavor_configuration(model_path=model_path, flavor_name=pyfunc.FLAVOR_NAME)
     saved_conda_env_path = os.path.join(model_path, pyfunc_conf[pyfunc.ENV])
     assert os.path.exists(saved_conda_env_path)
@@ -431,13 +431,13 @@ def test_save_model_persists_specified_conda_env_in_mlflow_model_directory(
 
 @pytest.mark.large
 def test_save_model_accepts_conda_env_as_dict(saved_tf_iris_model, model_path):
-    conda_env = dict(mlflow.tensorflow.get_default_conda_env())
+    conda_env = dict(kiwi.tensorflow.get_default_conda_env())
     conda_env["dependencies"].append("pytest")
-    mlflow.tensorflow.save_model(tf_saved_model_dir=saved_tf_iris_model.path,
-                                 tf_meta_graph_tags=saved_tf_iris_model.meta_graph_tags,
-                                 tf_signature_def_key=saved_tf_iris_model.signature_def_key,
-                                 path=model_path,
-                                 conda_env=conda_env)
+    kiwi.tensorflow.save_model(tf_saved_model_dir=saved_tf_iris_model.path,
+                               tf_meta_graph_tags=saved_tf_iris_model.meta_graph_tags,
+                               tf_signature_def_key=saved_tf_iris_model.signature_def_key,
+                               path=model_path,
+                               conda_env=conda_env)
 
     pyfunc_conf = _get_flavor_configuration(model_path=model_path, flavor_name=pyfunc.FLAVOR_NAME)
     saved_conda_env_path = os.path.join(model_path, pyfunc_conf[pyfunc.ENV])
@@ -452,14 +452,14 @@ def test_save_model_accepts_conda_env_as_dict(saved_tf_iris_model, model_path):
 def test_log_model_persists_specified_conda_env_in_mlflow_model_directory(
         saved_tf_iris_model, tf_custom_env):
     artifact_path = "model"
-    with mlflow.start_run():
-        mlflow.tensorflow.log_model(tf_saved_model_dir=saved_tf_iris_model.path,
-                                    tf_meta_graph_tags=saved_tf_iris_model.meta_graph_tags,
-                                    tf_signature_def_key=saved_tf_iris_model.signature_def_key,
-                                    artifact_path=artifact_path,
-                                    conda_env=tf_custom_env)
+    with kiwi.start_run():
+        kiwi.tensorflow.log_model(tf_saved_model_dir=saved_tf_iris_model.path,
+                                  tf_meta_graph_tags=saved_tf_iris_model.meta_graph_tags,
+                                  tf_signature_def_key=saved_tf_iris_model.signature_def_key,
+                                  artifact_path=artifact_path,
+                                  conda_env=tf_custom_env)
         model_uri = "runs:/{run_id}/{artifact_path}".format(
-            run_id=mlflow.active_run().info.run_id,
+            run_id=kiwi.active_run().info.run_id,
             artifact_path=artifact_path)
 
     model_path = _download_artifact_from_uri(artifact_uri=model_uri)
@@ -478,32 +478,32 @@ def test_log_model_persists_specified_conda_env_in_mlflow_model_directory(
 @pytest.mark.large
 def test_save_model_without_specified_conda_env_uses_default_env_with_expected_dependencies(
         saved_tf_iris_model, model_path):
-    mlflow.tensorflow.save_model(tf_saved_model_dir=saved_tf_iris_model.path,
-                                 tf_meta_graph_tags=saved_tf_iris_model.meta_graph_tags,
-                                 tf_signature_def_key=saved_tf_iris_model.signature_def_key,
-                                 path=model_path,
-                                 conda_env=None)
+    kiwi.tensorflow.save_model(tf_saved_model_dir=saved_tf_iris_model.path,
+                               tf_meta_graph_tags=saved_tf_iris_model.meta_graph_tags,
+                               tf_signature_def_key=saved_tf_iris_model.signature_def_key,
+                               path=model_path,
+                               conda_env=None)
 
     pyfunc_conf = _get_flavor_configuration(model_path=model_path, flavor_name=pyfunc.FLAVOR_NAME)
     conda_env_path = os.path.join(model_path, pyfunc_conf[pyfunc.ENV])
     with open(conda_env_path, "r") as f:
         conda_env = yaml.safe_load(f)
 
-    assert conda_env == mlflow.tensorflow.get_default_conda_env()
+    assert conda_env == kiwi.tensorflow.get_default_conda_env()
 
 
 @pytest.mark.large
 def test_log_model_without_specified_conda_env_uses_default_env_with_expected_dependencies(
         saved_tf_iris_model, model_path):
     artifact_path = "model"
-    with mlflow.start_run():
-        mlflow.tensorflow.log_model(tf_saved_model_dir=saved_tf_iris_model.path,
-                                    tf_meta_graph_tags=saved_tf_iris_model.meta_graph_tags,
-                                    tf_signature_def_key=saved_tf_iris_model.signature_def_key,
-                                    artifact_path=artifact_path,
-                                    conda_env=None)
+    with kiwi.start_run():
+        kiwi.tensorflow.log_model(tf_saved_model_dir=saved_tf_iris_model.path,
+                                  tf_meta_graph_tags=saved_tf_iris_model.meta_graph_tags,
+                                  tf_signature_def_key=saved_tf_iris_model.signature_def_key,
+                                  artifact_path=artifact_path,
+                                  conda_env=None)
         model_uri = "runs:/{run_id}/{artifact_path}".format(
-            run_id=mlflow.active_run().info.run_id,
+            run_id=kiwi.active_run().info.run_id,
             artifact_path=artifact_path)
 
     model_path = _download_artifact_from_uri(artifact_uri=model_uri)
@@ -512,15 +512,15 @@ def test_log_model_without_specified_conda_env_uses_default_env_with_expected_de
     with open(conda_env_path, "r") as f:
         conda_env = yaml.safe_load(f)
 
-    assert conda_env == mlflow.tensorflow.get_default_conda_env()
+    assert conda_env == kiwi.tensorflow.get_default_conda_env()
 
 
 @pytest.mark.large
 def test_iris_data_model_can_be_loaded_and_evaluated_as_pyfunc(saved_tf_iris_model, model_path):
-    mlflow.tensorflow.save_model(tf_saved_model_dir=saved_tf_iris_model.path,
-                                 tf_meta_graph_tags=saved_tf_iris_model.meta_graph_tags,
-                                 tf_signature_def_key=saved_tf_iris_model.signature_def_key,
-                                 path=model_path)
+    kiwi.tensorflow.save_model(tf_saved_model_dir=saved_tf_iris_model.path,
+                               tf_meta_graph_tags=saved_tf_iris_model.meta_graph_tags,
+                               tf_signature_def_key=saved_tf_iris_model.signature_def_key,
+                               path=model_path)
 
     pyfunc_wrapper = pyfunc.load_model(model_path)
     results_df = pyfunc_wrapper.predict(saved_tf_iris_model.inference_df)
@@ -531,10 +531,10 @@ def test_iris_data_model_can_be_loaded_and_evaluated_as_pyfunc(saved_tf_iris_mod
 @pytest.mark.large
 def test_categorical_model_can_be_loaded_and_evaluated_as_pyfunc(
         saved_tf_categorical_model, model_path):
-    mlflow.tensorflow.save_model(tf_saved_model_dir=saved_tf_categorical_model.path,
-                                 tf_meta_graph_tags=saved_tf_categorical_model.meta_graph_tags,
-                                 tf_signature_def_key=saved_tf_categorical_model.signature_def_key,
-                                 path=model_path)
+    kiwi.tensorflow.save_model(tf_saved_model_dir=saved_tf_categorical_model.path,
+                               tf_meta_graph_tags=saved_tf_categorical_model.meta_graph_tags,
+                               tf_signature_def_key=saved_tf_categorical_model.signature_def_key,
+                               path=model_path)
 
     pyfunc_wrapper = pyfunc.load_model(model_path)
     results_df = pyfunc_wrapper.predict(saved_tf_categorical_model.inference_df)
@@ -544,17 +544,17 @@ def test_categorical_model_can_be_loaded_and_evaluated_as_pyfunc(
 
 @pytest.mark.release
 def test_model_deployment_with_default_conda_env(saved_tf_iris_model, model_path):
-    mlflow.tensorflow.save_model(tf_saved_model_dir=saved_tf_iris_model.path,
-                                 tf_meta_graph_tags=saved_tf_iris_model.meta_graph_tags,
-                                 tf_signature_def_key=saved_tf_iris_model.signature_def_key,
-                                 path=model_path,
-                                 conda_env=None)
+    kiwi.tensorflow.save_model(tf_saved_model_dir=saved_tf_iris_model.path,
+                               tf_meta_graph_tags=saved_tf_iris_model.meta_graph_tags,
+                               tf_signature_def_key=saved_tf_iris_model.signature_def_key,
+                               path=model_path,
+                               conda_env=None)
 
     scoring_response = score_model_in_sagemaker_docker_container(
         model_uri=model_path,
         data=saved_tf_iris_model.inference_df,
         content_type=pyfunc_scoring_server.CONTENT_TYPE_JSON_SPLIT_ORIENTED,
-        flavor=mlflow.pyfunc.FLAVOR_NAME)
+        flavor=kiwi.pyfunc.FLAVOR_NAME)
     deployed_model_preds = pd.DataFrame(json.loads(scoring_response.content))
 
     pandas.testing.assert_frame_equal(

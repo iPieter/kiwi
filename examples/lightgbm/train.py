@@ -6,8 +6,8 @@ from sklearn.metrics import accuracy_score, log_loss
 import lightgbm as lgb
 import matplotlib as mpl
 
-import mlflow
-import mlflow.lightgbm
+import kiwi
+import kiwi.lightgbm
 
 mpl.use('Agg')
 
@@ -35,9 +35,9 @@ def main():
     train_set = lgb.Dataset(X_train, label=y_train)
 
     # enable auto logging
-    mlflow.lightgbm.autolog()
+    kiwi.lightgbm.autolog()
 
-    with mlflow.start_run():
+    with kiwi.start_run():
 
         # train model
         params = {
@@ -59,7 +59,7 @@ def main():
         acc = accuracy_score(y_test, y_pred)
 
         # log metrics
-        mlflow.log_metrics({'log_loss': loss, 'accuracy': acc})
+        kiwi.log_metrics({'log_loss': loss, 'accuracy': acc})
 
 
 if __name__ == '__main__':
