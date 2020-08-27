@@ -52,6 +52,9 @@ setup(
         'gorilla',
         'prometheus-flask-exporter',
         'psutil',
+        'py-cpuinfo',
+        'hyperopt,'
+        'psutil',
         'py-cpuinfo'
     ],
     extras_require={
@@ -78,7 +81,7 @@ setup(
     ''',
     zip_safe=False,
     author='Databricks',
-    description='kiwi: An ML Workflow Tool',
+    description='kiwi: ',
     long_description=open('README.md').read(),
     license='Apache License 2.0',
     classifiers=[
