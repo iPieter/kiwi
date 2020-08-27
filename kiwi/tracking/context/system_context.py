@@ -19,17 +19,21 @@ from kiwi.utils.mlflow_tags import KIWI_SYSTEM_HW_CPU, KIWI_SYSTEM_HW_MEMORY, KI
 
 
 def _get_cpu_info():
-    advanced_cpuInfo = get_cpu_info()
+    advanced_cpu_info = get_cpu_info()
     cpu_info = list()
-    cpu_info.append(["CPU Model:", advanced_cpuInfo["brand_raw"]])
+    cpu_info.append(["CPU Model:", advanced_cpu_info["brand_raw"]])
     cpu_info.append(["# Cores (Physical):", psutil.cpu_count(False)])
     cpu_info.append(["# Cores (Logical):", psutil.cpu_count(True)])
     cpu_info.append(["CPU Max Frequency:", psutil.cpu_freq().max])
 
-    cpu_info.append(["Architecture:", advanced_cpuInfo["arch"]])
-    cpu_info.append(["L1 Cache Size:", advanced_cpuInfo["l1_data_cache_size"]])
-    cpu_info.append(["L2 Cache Size:", advanced_cpuInfo["l2_cache_size"]])
-    cpu_info.append(["L3 Cache Size:", advanced_cpuInfo["l3_cache_size"]])
+    if "arch" in advanced_cpu_info:
+        cpu_info.append(["Architecture:", advanced_cpu_info["arch"]])
+    if "l1_data_cache_size" in advanced_cpu_info:
+        cpu_info.append(["L1 Cache Size:", advanced_cpu_info["l1_data_cache_size"]])
+    if "l2_cache_size" in advanced_cpu_info:
+        cpu_info.append(["L2 Cache Size:", advanced_cpu_info["l2_cache_size"]])
+    if "l3_cache_size" in advanced_cpu_info:
+        cpu_info.append(["L3 Cache Size:", advanced_cpu_info["l3_cache_size"]])
     return cpu_info
 
 

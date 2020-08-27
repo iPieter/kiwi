@@ -81,7 +81,7 @@ setup(
     ''',
     zip_safe=False,
     author='Databricks',
-    description='kiwi: ',
+    description='kiwi: Towards Fully Versioned Machine Learning',
     long_description=open('README.md').read(),
     license='Apache License 2.0',
     classifiers=[

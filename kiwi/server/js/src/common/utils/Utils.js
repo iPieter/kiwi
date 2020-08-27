@@ -6,7 +6,7 @@ import laptopSvg from '../static/laptop.svg';
 import projectSvg from '../static/project.svg';
 import jobSvg from '../static/job.svg';
 import qs from 'qs';
-import { MLFLOW_INTERNAL_PREFIX } from './TagUtils';
+import { MLFLOW_INTERNAL_PREFIX, KIWI_INTERNAL_PREFIX } from './TagUtils';
 import { message } from 'antd';
 import _ from 'lodash';
 import { ErrorCodes } from '../constants';
