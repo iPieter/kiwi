@@ -25,7 +25,63 @@ You can install Kiwi from our Github repository.
 pip install git+git@github.com:iPieter/kiwi.git
 ```
 
-Here is a minimal example without a training loop
+### <a name="data-versioning"></a> Data versioning
+You can register your datasets with Kiwi. 
+We support Pytorch dataloaders and virtually all dataset arrays (as long as they are hashable and have implemented `len()`).
+In addition, you can also register the file itself for more metadata (disk size + location).
+
+The following code registers the training dataset:
+```python
+import kiwi
+kiwi.register_training_dataset(
+    dataloader=train_loader,
+    dataset_location="/path/to/test.txt",
+    experiment_id=current_experiment_id)
+```
+
+Normally, you register all three data splits (or use random splits).
+```python
+import kiwi
+kiwi.register_training_dataset(...)
+kiwi.register_dev_dataset(...)
+kiwi.register_test_dataset(...)
+```
+
+### <a name="hyperparam"></a> Hyperparameter tuning and logging
+We provide hyperparameter search with random search (`"random"`) and Bayesian optimization (`"tpe"`).
+You can add this as a wrapper over your training/eval loop as follows:
+
+1. You define the search space as follows: 
+
+    ```python
+    space = {
+        'learning_rate': ("range", [1e-6, 1e-4]),
+        'weight_decay': ("range", [0, 0.1]),
+        'batch_size': ("choice", [8, 16, 32, 48])
+    }
+    ```
+
+2. Define an objective function over the training + evaluation loop
+
+    ```python
+    def objective(args):
+    # start a run
+    with kiwi.start_run(experiment_id=current_experiment_id):
+        return 1-metrics['eval_acc']
+    ```
+3. Start the experiment with the previously declared objective function:
+    ```python
+    kiwi.start_experiment(current_experiment_id, hp_space=space, objective=objective, max_evals=30, mode="tpe")
+    ```
+
+### <a name="snapshots"></a> Reproducible snapshots
+
+### Full example
+Here is a minimal example without a training loop. 
+We also have fully working examples in `examples/`, check out the following: 
+
+- Pytorch on MNIST: [`examples/pytorch` »](examples/pytorch)
+
 ```python
 import kiwi
 
@@ -79,31 +135,6 @@ space = {
 kiwi.start_experiment(current_experiment_id, hp_space=space, objective=objective, max_evals=30, mode="tpe")
 ```
 
-### <a name="data-versioning"></a> Data versioning
-You can register your datasets with Kiwi. 
-We support Pytorch dataloaders and virtually all dataset arrays (as long as they are hashable and have implemented `len()`).
-In addition, you can also register the file itself for more metadata (disk size + location).
-
-The following code registers the training dataset:
-```python
-import kiwi
-kiwi.register_training_dataset(
-    dataloader=train_loader,
-    dataset_location="/path/to/test.txt",
-    experiment_id=current_experiment_id)
-```
-
-Normally, you register all three data splits (or use random splits).
-```python
-import kiwi
-kiwi.register_training_dataset(...)
-kiwi.register_dev_dataset(...)
-kiwi.register_test_dataset(...)
-```
-
-### <a name="hyperparam"></a> Hyperparameter tuning and logging
-
-### <a name="snapshots"></a> Reproducible snapshots
 
 # Credits
 - Kiwi bird by Georgiana Ionescu from the Noun Project
