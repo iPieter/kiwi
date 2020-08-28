@@ -61,13 +61,16 @@ You can add this as a wrapper over your training/eval loop as follows:
     }
     ```
 
-2. Define an objective function over the training + evaluation loop
+2. Define an objective function over the training + evaluation loop.
+    You have to return an evaluation metric (in this case accuracy) that can be **minimized**. 
+    So if the metric, like accuracy, is higher-is-better, then you need to invert it. 
 
     ```python
     def objective(args):
-    # start a run
-    with kiwi.start_run(experiment_id=current_experiment_id):
-        return 1-metrics['eval_acc']
+        # start a run
+        with kiwi.start_run(experiment_id=current_experiment_id):
+           ...
+           return 1-metrics['eval_acc']
     ```
 3. Start the experiment with the previously declared objective function:
     ```python
