@@ -95,3 +95,4 @@ example/tutorial/R/*.nb.html
 
 # travis_wait command logs
 travis_wait*.log
+examples/data/

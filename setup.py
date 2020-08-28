@@ -53,7 +53,7 @@ setup(
         'prometheus-flask-exporter',
         'psutil',
         'py-cpuinfo',
-        'hyperopt,'
+        'hyperopt',
         'psutil',
         'py-cpuinfo'
     ],
