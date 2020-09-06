@@ -59,14 +59,14 @@ def _get_gpu_info():
     gpu_info = list()
     device_num = 0
     try:
-        device_num = len(torch.cuda.current_device()) if torch else 0
+        device_num = torch.cuda.device_count() if torch else 0
     except AssertionError:
         pass
     if (device_num>0 and torch):
         # Using PyTorch
         gpu_info.append(["GPU Framework:", "PyTorch"])
         gpu_info.append(["# GPUs:", torch.cuda.device_count()])
-        gpu_info.append(["GPU name:", torch.cuda.get_device_name()])
+        gpu_info.append(["GPU name:", torch.cuda.get_device_name(torch.cuda.current_device())])
     elif (tf and len(tf.test.gpu_device_name())>0):
         # Using TensorFlow
         gpu_info.append(["GPU Framework:", "TensorFlow"])
