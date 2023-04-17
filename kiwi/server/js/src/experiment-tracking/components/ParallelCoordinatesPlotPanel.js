@@ -29,7 +29,7 @@ export class ParallelCoordinatesPlotPanel extends React.Component {
 
   state = {
     // Default to select all parameters
-    selectedParamKeys: this.props.sharedParamKeys,
+    selectedParamKeys: this.props.sharedParamKeys.slice(0, 1),
     // Default to select the first metric key.
     // Note that there will be no color scaling if no metric is selected.
     selectedMetricKeys: this.props.sharedMetricKeys.slice(0, 1),
